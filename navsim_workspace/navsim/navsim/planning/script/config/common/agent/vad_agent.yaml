@@ -1,0 +1,2 @@
+_target_: navsim.agents.vad.vad_agent.VADAgent
+_convert_: 'all'
