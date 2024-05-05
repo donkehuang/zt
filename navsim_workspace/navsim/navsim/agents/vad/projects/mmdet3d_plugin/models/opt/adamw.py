@@ -5,8 +5,7 @@ except:
 
 import torch
 from torch.optim.optimizer import Optimizer
-from mmcv.runner.optimizer.builder import OPTIMIZERS
-
+from mmdet.registry import OPTIMIZERS
 @OPTIMIZERS.register_module()
 class AdamW2(Optimizer):
     r"""Implements AdamW algorithm. Solve the bug of torch 1.8

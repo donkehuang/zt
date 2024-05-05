@@ -8,25 +8,25 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import Linear, bias_init_with_prob
-from mmcv.utils import TORCH_VERSION, digit_version
-
-from mmdet.core import (multi_apply, multi_apply, reduce_mean)
-from mmdet.models.utils.transformer import inverse_sigmoid
-from mmdet.models import HEADS
+from mmengine.model import bias_init_with_prob
+from mmengine.utils.dl_utils import TORCH_VERSION
+from mmengine.utils import digit_version
+from mmdet.models.utils import multi_apply
+from mmdet.utils import reduce_mean
+from mmdet.models.layers import inverse_sigmoid
+from mmdet3d.registry import MODELS
 from mmdet.models.dense_heads import DETRHead
-from mmdet3d.core.bbox.coders import build_bbox_coder
-from projects.mmdet3d_plugin.core.bbox.util import normalize_bbox
+from mmdet3d.models.task_modules.builder import build_bbox_coder
+from projects.PETR.petr.utils import normalize_bbox
 from mmcv.cnn.bricks.transformer import build_positional_encoding
-from mmcv.runner import force_fp32, auto_fp16
-from projects.mmdet3d_plugin.models.utils.bricks import run_time
+# # from mmcv.runner import force_fp32, auto_fp16
+from navsim.agents.vad_test.util import run_time
 import numpy as np
 import mmcv
 import cv2 as cv
-from projects.mmdet3d_plugin.models.utils.visual import save_tensor
 
 
-@HEADS.register_module()
+@MODELS.register_module()
 class BEVFormerHead(DETRHead):
     """Head of Detr3D.
     Args:
@@ -127,7 +127,7 @@ class BEVFormerHead(DETRHead):
             for m in self.cls_branches:
                 nn.init.constant_(m[-1].bias, bias_init)
 
-    @auto_fp16(apply_to=('mlvl_feats'))
+    # @auto_fp16(apply_to=('mlvl_feats'))
     def forward(self, mlvl_feats, img_metas, prev_bev=None,  only_bev=False):
         """Forward function.
         Args:
@@ -406,7 +406,7 @@ class BEVFormerHead(DETRHead):
             loss_bbox = torch.nan_to_num(loss_bbox)
         return loss_cls, loss_bbox
 
-    @force_fp32(apply_to=('preds_dicts'))
+    # # @force_fp32(apply_to=('preds_dicts'))
     def loss(self,
              gt_bboxes_list,
              gt_labels_list,
@@ -493,7 +493,7 @@ class BEVFormerHead(DETRHead):
             num_dec_layer += 1
         return loss_dict
 
-    @force_fp32(apply_to=('preds_dicts'))
+    # # @force_fp32(apply_to=('preds_dicts'))
     def get_bboxes(self, preds_dicts, img_metas, rescale=False):
         """Generate bboxes from bbox head predictions.
         Args:

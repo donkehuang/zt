@@ -253,7 +253,8 @@ class VADConfig:
                 pc_range=point_cloud_range,
                 max_num=100,
                 voxel_size=voxel_size,
-                num_classes=num_classes),
+                num_classes=num_classes,
+                _scope_='mmdet',),
             map_bbox_coder=dict(
                 type='MapNMSFreeCoder',
                 post_center_range=[-20, -35, -20, -35, 20, 35, 20, 35],

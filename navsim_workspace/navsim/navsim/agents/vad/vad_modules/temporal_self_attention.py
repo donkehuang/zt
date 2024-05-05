@@ -1,17 +1,10 @@
-# ---------------------------------------------
-# Copyright (c) OpenMMLab. All rights reserved.
-# ---------------------------------------------
-#  Modified by Zhiqi Li
-# ---------------------------------------------
-
-from navsim.agents.vad_test.util import run_time
-from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32
+from navsim.agents.vad.vad_modules.multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32
 from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 import warnings
 import torch
 import torch.nn as nn
 import math
-from mmengine.model import BaseModule, xavier_init, constant_init
+from mmengine.model import BaseModule, ModuleList, Sequential, xavier_init, constant_init
 
 from mmcv.utils import ext_loader
 ext_module = ext_loader.load_ext(

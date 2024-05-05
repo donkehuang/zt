@@ -1,13 +1,12 @@
-from projects.mmdet3d_plugin.models.utils.bricks import run_time
+from navsim.agents.vad_test.util import run_time
 from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32
 from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 import warnings
 import torch
 import torch.nn as nn
-from mmcv.cnn import xavier_init, constant_init
-from mmcv.cnn.bricks.registry import ATTENTION
+from mmdet3d.registry import MODELS
 import math
-from mmcv.runner.base_module import BaseModule, ModuleList, Sequential
+from mmengine.model import BaseModule, ModuleList, Sequential, xavier_init, constant_init
 from mmcv.utils import (ConfigDict, build_from_cfg, deprecated_api_warning,
                         to_2tuple)
 
@@ -16,7 +15,7 @@ ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 
 
-@ATTENTION.register_module()
+@MODELS.register_module()
 class TemporalSelfAttention(BaseModule):
     """An attention module used in BEVFormer based on Deformable-Detr.
 

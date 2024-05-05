@@ -4,10 +4,11 @@ import torch
 import torch.nn as nn
 
 from navsim.agents.vad.vad_config import VADConfig
-from mmdet3d.models.builder import build_model
+from navsim.agents.vad.vad_detectors import VAD
 from navsim.agents.transfuser.transfuser_backbone import TransfuserBackbone
 from navsim.common.enums import StateSE2Index
 from navsim.agents.transfuser.transfuser_features import BoundingBox2DIndex
+# from mmdet.models
 
 
 class VADModel(nn.Module):
@@ -15,13 +16,13 @@ class VADModel(nn.Module):
 
         super().__init__()
 
-        self._query_splits = [
-            1,
-            config.num_bounding_boxes,
-        ]
-
         self._config = config
-        self._model = build_model(config)
+        print(config.model['img_backbone'])
+        # self._detector = VAD(config.model)
+        self._detector = VAD(config.model['use_grid_mask'],
+                             config.model['img_backbone'],
+                             config.model['img_neck'],
+                             config.model['pts_bbox_head'])
         
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
 

@@ -1,7 +1,7 @@
 import mmcv
 import numpy as np
 
-from mmdet.core.evaluation.bbox_overlaps import bbox_overlaps
+from mmdet.evaluation import bbox_overlaps
 from .tpfp_chamfer import vec_iou, convex_iou, rbbox_iou, polyline_score, custom_polyline_score
 from shapely.geometry import LineString, Polygon
 # from vecmapnet_ops.ops.iou import convex_iou

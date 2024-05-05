@@ -1,19 +1,17 @@
 import torch
 import numpy as np
 import torch.nn as nn
-from mmcv.cnn import xavier_init
 from mmcv.utils import ext_loader
 from torch.nn.init import normal_
-from mmcv.runner.base_module import BaseModule
-from mmdet.models.utils.builder import TRANSFORMER
+from mmengine.model import BaseModule, xavier_init
+from mmdet3d.registry import MODELS
 from torchvision.transforms.functional import rotate
-from mmcv.cnn.bricks.registry import TRANSFORMER_LAYER_SEQUENCE
 from mmcv.cnn.bricks.transformer import TransformerLayerSequence
 from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
-
-from projects.mmdet3d_plugin.VAD.modules.decoder import CustomMSDeformableAttention
-from projects.mmdet3d_plugin.VAD.modules.temporal_self_attention import TemporalSelfAttention
-from projects.mmdet3d_plugin.VAD.modules.spatial_cross_attention import MSDeformableAttention3D
+from navsim.agents.vad.vad_modules.decoder import CustomMSDeformableAttention
+from navsim.agents.vad.vad_modules.temporal_self_attention import TemporalSelfAttention
+from navsim.agents.vad.vad_modules.spatial_cross_attention import MSDeformableAttention3D
+from navsim.agents.vad.projects.mmdet3d_plugin.bevformer.modules import BEVFormerEncoder
 
 
 ext_module = ext_loader.load_ext(
@@ -37,7 +35,7 @@ def inverse_sigmoid(x, eps=1e-5):
     return torch.log(x1 / x2)
 
 
-@TRANSFORMER_LAYER_SEQUENCE.register_module()
+@MODELS.register_module()
 class MapDetectionTransformerDecoder(TransformerLayerSequence):
     """Implements the decoder in DETR3D transformer.
     Args:
@@ -117,7 +115,7 @@ class MapDetectionTransformerDecoder(TransformerLayerSequence):
         return output, reference_points
 
 
-@TRANSFORMER.register_module()
+@MODELS.register_module()
 class VADPerceptionTransformer(BaseModule):
     """Implements the Detr3D transformer.
     Args:
@@ -130,9 +128,6 @@ class VADPerceptionTransformer(BaseModule):
     """
 
     def __init__(self,
-                 num_feature_levels=4,
-                 num_cams=6,
-                 two_stage_num_proposals=300,
                  encoder=None,
                  decoder=None,
                  map_decoder=None,
@@ -140,11 +135,14 @@ class VADPerceptionTransformer(BaseModule):
                  rotate_prev_bev=True,
                  use_shift=True,
                  use_can_bus=True,
+                 map_num_vec=50,
+                 map_num_pts_per_vec=10,
+                 num_feature_levels=4,
+                 num_cams=6,
+                 two_stage_num_proposals=300,
                  can_bus_norm=True,
                  use_cams_embeds=True,
                  rotate_center=[100, 100],
-                 map_num_vec=50,
-                 map_num_pts_per_vec=10,
                  **kwargs):
         super(VADPerceptionTransformer, self).__init__(**kwargs)
         self.encoder = build_transformer_layer_sequence(encoder)
@@ -208,7 +206,7 @@ class VADPerceptionTransformer(BaseModule):
         xavier_init(self.can_bus_mlp, distribution='uniform', bias=0.)
 
     # TODO apply fp16 to this module cause grad_norm NAN
-    # @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'prev_bev', 'bev_pos'))
+    # # @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'prev_bev', 'bev_pos'))
     def get_bev_features(
             self,
             mlvl_feats,
@@ -308,7 +306,7 @@ class VADPerceptionTransformer(BaseModule):
         return bev_embed
 
     # TODO apply fp16 to this module cause grad_norm NAN
-    # @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'object_query_embed', 'prev_bev', 'bev_pos'))
+    # # @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'object_query_embed', 'prev_bev', 'bev_pos'))
     def forward(self,
                 mlvl_feats,
                 bev_queries,
@@ -435,7 +433,7 @@ class VADPerceptionTransformer(BaseModule):
             map_inter_states, map_init_reference_out, map_inter_references_out)
 
 
-@TRANSFORMER_LAYER_SEQUENCE.register_module()
+@MODELS.register_module()
 class CustomTransformerDecoder(TransformerLayerSequence):
     """Implements the decoder in DETR3D transformer.
     Args:

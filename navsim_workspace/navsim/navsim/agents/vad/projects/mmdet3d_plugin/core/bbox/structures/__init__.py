@@ -1,3 +1,3 @@
-from .lidar_box3d import CustomLiDARInstance3DBoxes
+from .nuscenes_box import CustomNuscenesBox
 
-__all__ = ['CustomLiDARInstance3DBoxes']
+__all__ = ['CustomNuscenesBox']

@@ -3,7 +3,7 @@ from multiprocessing import Pool
 from shapely.geometry import LineString, Polygon
 import mmcv
 import numpy as np
-from mmcv.utils import print_log
+from mmengine.logging import print_log
 from terminaltables import AsciiTable
 import json
 from os import path as osp

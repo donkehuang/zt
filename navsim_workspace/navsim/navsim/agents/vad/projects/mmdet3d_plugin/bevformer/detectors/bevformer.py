@@ -6,19 +6,19 @@
 
 from tkinter.messagebox import NO
 import torch
-from mmcv.runner import force_fp32, auto_fp16
-from mmdet.models import DETECTORS
-from mmdet3d.core import bbox3d2result
+# from mmcv.runner import force_fp32, auto_fp16
+from mmdet3d.registry import MODELS
+from mmdet3d.structures import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
-from projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
+from navsim.agents.vad.projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
 import time
 import copy
 import numpy as np
 import mmdet3d
-from projects.mmdet3d_plugin.models.utils.bricks import run_time
+from navsim.agents.vad_test.util import run_time
 
 
-@DETECTORS.register_module()
+@MODELS.register_module()
 class BEVFormer(MVXTwoStageDetector):
     """BEVFormer.
     Args:
@@ -100,7 +100,7 @@ class BEVFormer(MVXTwoStageDetector):
                 img_feats_reshaped.append(img_feat.view(B, int(BN / B), C, H, W))
         return img_feats_reshaped
 
-    @auto_fp16(apply_to=('img'))
+    # @auto_fp16(apply_to=('img'))
     def extract_feat(self, img, img_metas=None, len_queue=None):
         """Extract features from images and points."""
 
@@ -175,7 +175,7 @@ class BEVFormer(MVXTwoStageDetector):
             self.train()
             return prev_bev
 
-    @auto_fp16(apply_to=('img', 'points'))
+    # @auto_fp16(apply_to=('img', 'points'))
     def forward_train(self,
                       points=None,
                       img_metas=None,

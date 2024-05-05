@@ -2,17 +2,16 @@ import time
 import copy
 
 import torch
-from mmdet.models import DETECTORS
-from mmdet3d.core import bbox3d2result
-from mmcv.runner import force_fp32, auto_fp16
+from mmdet3d.registry import MODELS
+from mmdet3d.structures import bbox3d2result
+# from mmcv.runner import force_fp32, auto_fp16
 from scipy.optimize import linear_sum_assignment
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 
-from projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
-from projects.mmdet3d_plugin.VAD.planner.metric_stp3 import PlanningMetric
+from navsim.agents.vad.projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
+from navsim.agents.vad.projects.mmdet3d_plugin.VAD.planner.metric_stp3 import PlanningMetric
 
 
-@DETECTORS.register_module()
 class VAD(MVXTwoStageDetector):
     """VAD model.
     """
@@ -97,7 +96,7 @@ class VAD(MVXTwoStageDetector):
                 img_feats_reshaped.append(img_feat.view(B, int(BN / B), C, H, W))
         return img_feats_reshaped
 
-    @auto_fp16(apply_to=('img'), out_fp32=True)
+    # @auto_fp16(apply_to=('img'), out_fp32=True)
     def extract_feat(self, img, img_metas=None, len_queue=None):
         """Extract features from images and points."""
 
@@ -183,8 +182,8 @@ class VAD(MVXTwoStageDetector):
             self.train()
             return prev_bev
 
-    # @auto_fp16(apply_to=('img', 'points'))
-    @force_fp32(apply_to=('img','points','prev_bev'))
+    # # @auto_fp16(apply_to=('img', 'points'))
+    # @force_fp32(apply_to=('img','points','prev_bev'))
     def forward_train(self,
                       points=None,
                       img_metas=None,

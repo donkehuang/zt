@@ -12,6 +12,7 @@ from navsim.planning.training.abstract_feature_target_builder import (
     AbstractTargetBuilder,
 )
 from navsim.agents.vad.vad_config import VADConfig
+from navsim.agents.vad.vad_head import VADHead
 from navsim.agents.vad.vad_model import VADModel
 from navsim.agents.transfuser.transfuser_callback import TransfuserCallback
 from navsim.agents.transfuser.transfuser_loss import transfuser_loss
@@ -42,17 +43,17 @@ class VADAgent(AbstractAgent):
 
         return self.__class__.__name__
 
-    # def initialize(self) -> None:
+    def initialize(self) -> None:
     #     """Inherited, see superclass."""
-    #     if torch.cuda.is_available():
-    #         state_dict: Dict[str, Any] = torch.load(self._checkpoint_path)["state_dict"]
-    #     else:
-    #         state_dict: Dict[str, Any] = torch.load(self._checkpoint_path, map_location=torch.device("cpu"))["state_dict"]
-    #     self.load_state_dict({k.replace("agent.", ""): v for k, v in state_dict.items()})
+        if torch.cuda.is_available():
+            state_dict: Dict[str, Any] = torch.load(self._checkpoint_path)["state_dict"]
+        else:
+            state_dict: Dict[str, Any] = torch.load(self._checkpoint_path, map_location=torch.device("cpu"))["state_dict"]
+        self.load_state_dict({k.replace("agent.", ""): v for k, v in state_dict.items()})
 
-    # def get_sensor_config(self) -> SensorConfig:
-    #     """Inherited, see superclass."""
-    #     return SensorConfig.build_all_sensors(include=[3])
+    def get_sensor_config(self) -> SensorConfig:
+        """Inherited, see superclass."""
+        return SensorConfig.build_all_sensors(include=[3])
 
     # def get_target_builders(self) -> List[AbstractTargetBuilder]:
     #     return [TransfuserTargetBuilder(config=self._config)]

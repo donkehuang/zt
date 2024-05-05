@@ -1,11 +1,5 @@
-
-# ---------------------------------------------
-# Copyright (c) OpenMMLab. All rights reserved.
-# ---------------------------------------------
-#  Modified by Zhiqi Li
-# ---------------------------------------------
-
-from .custom_base_transformer_layer import MyCustomBaseTransformerLayer
+from navsim.agents.vad_test.util import run_time
+from navsim.agents.vad.vad_modules.custom_base_transformer_layer import MyCustomBaseTransformerLayer
 import copy
 import warnings
 from mmdet3d.registry import MODELS
@@ -14,7 +8,6 @@ from mmcv.cnn.bricks.transformer import TransformerLayerSequence
 import numpy as np
 import torch
 import cv2 as cv
-import mmcv
 from mmengine.utils.dl_utils import TORCH_VERSION
 from mmengine.utils import digit_version
 from mmcv.utils import ext_loader
@@ -22,7 +15,6 @@ ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 
 
-@MODELS.register_module()
 class BEVFormerEncoder(TransformerLayerSequence):
 
     """
@@ -233,7 +225,6 @@ class BEVFormerEncoder(TransformerLayerSequence):
         return output
 
 
-@MODELS.register_module()
 class BEVFormerLayer(MyCustomBaseTransformerLayer):
     """Implements decoder layer in DETR transformer.
     Args:

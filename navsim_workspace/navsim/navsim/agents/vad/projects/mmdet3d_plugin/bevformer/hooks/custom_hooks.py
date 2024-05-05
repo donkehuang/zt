@@ -1,8 +1,5 @@
-from mmcv.runner.hooks.hook import HOOKS, Hook
-from projects.mmdet3d_plugin.models.utils import run_time
+from mmengine.hooks import Hook
 
-
-@HOOKS.register_module()
 class TransferWeight(Hook):
     
     def __init__(self, every_n_inters=1):
