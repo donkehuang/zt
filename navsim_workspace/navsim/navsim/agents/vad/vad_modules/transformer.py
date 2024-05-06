@@ -1,16 +1,15 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
+from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence, BaseTransformerLayer
 from mmengine.model import BaseModule, xavier_init
 
 from mmdet3d.registry import MODELS
 from torch.nn.init import normal_
 from torchvision.transforms.functional import rotate
-from navsim.agents.vad.vad_modules.temporal_self_attention import TemporalSelfAttention
-from navsim.agents.vad.vad_modules.spatial_cross_attention import MSDeformableAttention3D
-from navsim.agents.vad.vad_modules.decoder import CustomMSDeformableAttention
-from navsim.agents.vad_test.util import run_time# from mmcv.runner import force_fp32, auto_fp16
+from .temporal_self_attention import TemporalSelfAttention
+from .spatial_cross_attention import MSDeformableAttention3D
+from .decoder import CustomMSDeformableAttention
 
 
 @MODELS.register_module()
@@ -277,3 +276,49 @@ class PerceptionTransformer(BaseModule):
         inter_references_out = inter_references
 
         return bev_embed, inter_states, init_reference_out, inter_references_out
+
+
+@MODELS.register_module()
+class DetrTransformerDecoderLayer(BaseTransformerLayer):
+    """Implements decoder layer in DETR transformer.
+
+    Args:
+        attn_cfgs (list[`mmcv.ConfigDict`] | list[dict] | dict )):
+            Configs for self_attention or cross_attention, the order
+            should be consistent with it in `operation_order`. If it is
+            a dict, it would be expand to the number of attention in
+            `operation_order`.
+        feedforward_channels (int): The hidden dimension for FFNs.
+        ffn_dropout (float): Probability of an element to be zeroed
+            in ffn. Default 0.0.
+        operation_order (tuple[str]): The execution order of operation
+            in transformer. Such as ('self_attn', 'norm', 'ffn', 'norm').
+            Default：None
+        act_cfg (dict): The activation config for FFNs. Default: `LN`
+        norm_cfg (dict): Config dict for normalization layer.
+            Default: `LN`.
+        ffn_num_fcs (int): The number of fully-connected layers in FFNs.
+            Default：2.
+    """
+
+    def __init__(self,
+                 attn_cfgs,
+                 feedforward_channels,
+                 ffn_dropout=0.0,
+                 operation_order=None,
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 norm_cfg=dict(type='LN'),
+                 ffn_num_fcs=2,
+                 **kwargs):
+        super(DetrTransformerDecoderLayer, self).__init__(
+            attn_cfgs=attn_cfgs,
+            feedforward_channels=feedforward_channels,
+            ffn_dropout=ffn_dropout,
+            operation_order=operation_order,
+            act_cfg=act_cfg,
+            norm_cfg=norm_cfg,
+            ffn_num_fcs=ffn_num_fcs,
+            **kwargs)
+        assert len(operation_order) == 6
+        assert set(operation_order) == set(
+            ['self_attn', 'norm', 'cross_attn', 'ffn'])

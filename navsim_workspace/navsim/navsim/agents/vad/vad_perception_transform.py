@@ -11,9 +11,7 @@ from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
 from navsim.agents.vad.vad_modules.decoder import CustomMSDeformableAttention
 from navsim.agents.vad.vad_modules.temporal_self_attention import TemporalSelfAttention
 from navsim.agents.vad.vad_modules.spatial_cross_attention import MSDeformableAttention3D
-from navsim.agents.vad.projects.mmdet3d_plugin.bevformer.modules import BEVFormerEncoder
-
-
+from navsim.agents.vad.vad_modules.encoder import BEVFormerEncoder, BEVFormerLayer
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 
@@ -145,6 +143,11 @@ class VADPerceptionTransformer(BaseModule):
                  rotate_center=[100, 100],
                  **kwargs):
         super(VADPerceptionTransformer, self).__init__(**kwargs)
+        # self.encoder = BEVFormerEncoder(encoder['pc_range'],
+        #                                 encoder['num_points_in_pillar'],
+        #                                 encoder['return_intermediate'],
+        #                                 encoder['transformerlayers'],
+        #                                 encoder['num_layers'],)
         self.encoder = build_transformer_layer_sequence(encoder)
         if decoder is not None:
             self.decoder = build_transformer_layer_sequence(decoder)

@@ -3,8 +3,7 @@ import mmcv
 import torch
 from torch import nn as nn
 from mmdet.models import weighted_loss
-from mmdet.registry import MODELS
-
+from mmdet3d.registry import MODELS
 
 @MODELS.register_module()
 class PlanMapBoundLoss(nn.Module):

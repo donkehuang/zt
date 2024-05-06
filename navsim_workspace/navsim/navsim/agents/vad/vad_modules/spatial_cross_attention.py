@@ -13,9 +13,8 @@ import math
 from mmengine.model import BaseModule, ModuleList, Sequential, xavier_init, constant_init
 
 from mmcv.utils import ext_loader
-from navsim.agents.vad.vad_modules.multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
+from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
     MultiScaleDeformableAttnFunction_fp16
-from navsim.agents.vad_test.util import run_time
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 

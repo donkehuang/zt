@@ -8,11 +8,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import xavier_init, constant_init
 from mmdet3d.registry import MODELS
 from mmcv.cnn.bricks.transformer import TransformerLayerSequence
 import math
-from mmengine.model import BaseModule, ModuleList, Sequential
+from mmengine.model import BaseModule, ModuleList, Sequential, xavier_init, constant_init
 from mmcv.utils import (ConfigDict, build_from_cfg, deprecated_api_warning,
                         to_2tuple)
 

@@ -24,7 +24,7 @@ from navsim.agents.vad_test.map_utils import (
 )
 from navsim.agents.vad.vad_bbox_coder import CustomNMSFreeCoder
 from navsim.agents.vad.vad_map_bbox_coder import MapNMSFreeCoder
-from navsim.agents.vad.projects.mmdet3d_plugin.bevformer.modules import BEVFormerEncoder
+from navsim.agents.vad.vad_modules import BEVFormerEncoder
 from navsim.agents.vad.vad_perception_transform import VADPerceptionTransformer
 
 @MODELS.register_module()
@@ -155,25 +155,25 @@ class VADHead(DETRHead):
             self.map_code_weights = [1.0, 1.0, 1.0,
                                  1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2]
         # TODO bbox_coder
-        # self.bbox_coder = build_bbox_coder(bbox_coder)
+        self.bbox_coder = build_bbox_coder(bbox_coder)
         # self.bbox_coder = TASK_UTILS.build(bbox_coder)
-        self.bbox_coder = CustomNMSFreeCoder(bbox_coder['pc_range'],
-                                             bbox_coder['voxel_size'],
-                                             bbox_coder['post_center_range'],
-                                             bbox_coder['max_num'],
-                                             bbox_coder['num_classes'])
+        # self.bbox_coder = CustomNMSFreeCoder(bbox_coder['pc_range'],
+        #                                      bbox_coder['voxel_size'],
+        #                                      bbox_coder['post_center_range'],
+        #                                      bbox_coder['max_num'],
+        #                                      bbox_coder['num_classes'])
         self.pc_range = self.bbox_coder.pc_range
         self.real_w = self.pc_range[3] - self.pc_range[0]
         self.real_h = self.pc_range[4] - self.pc_range[1]
         self.num_cls_fcs = num_cls_fcs - 1
 
         # TODO map_bbox_coder
-        # self.map_bbox_coder = build_bbox_coder(map_bbox_coder)
-        self.map_bbox_coder = MapNMSFreeCoder(map_bbox_coder['pc_range'],
-                                              map_bbox_coder['voxel_size'],
-                                              map_bbox_coder['post_center_range'],
-                                              map_bbox_coder['max_num'],
-                                              map_bbox_coder['num_classes'])
+        self.map_bbox_coder = build_bbox_coder(map_bbox_coder)
+        # self.map_bbox_coder = MapNMSFreeCoder(map_bbox_coder['pc_range'],
+        #                                       map_bbox_coder['voxel_size'],
+        #                                       map_bbox_coder['post_center_range'],
+        #                                       map_bbox_coder['max_num'],
+        #                                       map_bbox_coder['num_classes'])
         self.map_query_embed_type = map_query_embed_type
         self.map_transform_method = map_transform_method
         self.map_gt_shift_pts_pattern = map_gt_shift_pts_pattern
@@ -212,12 +212,10 @@ class VADHead(DETRHead):
         
         self.traj_bg_cls_weight = 0
         
-        print(VADHead.__bases__[0].__name__)
-        # TODO redefine Detr kwarfs
-        kwargs.pop('num_query')
-        kwargs.pop('in_channels')
-        kwargs.pop('positional_encoding')
-        self.transformer = VADPerceptionTransformer(
+        # print(VADHead.__bases__[0].__name__)
+        # # TODO redefine Detr kwarfs
+        # self.transformer_101 = 
+        vad_transformer = VADPerceptionTransformer(
             transformer['encoder'],
             transformer['decoder'],
             transformer['map_decoder'],
@@ -226,8 +224,10 @@ class VADHead(DETRHead):
             transformer['use_shift'],
             transformer['use_can_bus'],
             transformer['map_num_vec'],
-            transformer['map_num_pts_per_vec'],
-        )
+            transformer['map_num_pts_per_vec'])
+        kwargs.pop('num_query')
+        kwargs.pop('in_channels')
+        kwargs.pop('positional_encoding')
         super(VADHead, self).__init__(*args, **kwargs)
         # super(VADHead, self).__init__(*args, transformer=transformer, **kwargs)
         self.code_weights = nn.Parameter(torch.tensor(

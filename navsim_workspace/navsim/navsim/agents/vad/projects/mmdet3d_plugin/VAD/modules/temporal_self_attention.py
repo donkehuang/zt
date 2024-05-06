@@ -7,9 +7,6 @@ import torch.nn as nn
 from mmdet3d.registry import MODELS
 import math
 from mmengine.model import BaseModule, ModuleList, Sequential, xavier_init, constant_init
-from mmcv.utils import (ConfigDict, build_from_cfg, deprecated_api_warning,
-                        to_2tuple)
-
 from mmcv.utils import ext_loader
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])

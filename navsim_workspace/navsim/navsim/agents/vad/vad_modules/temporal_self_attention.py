@@ -1,16 +1,16 @@
-from navsim.agents.vad.vad_modules.multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32
+from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32
 from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 import warnings
 import torch
 import torch.nn as nn
 import math
 from mmengine.model import BaseModule, ModuleList, Sequential, xavier_init, constant_init
-
+from mmdet3d.registry import MODELS
 from mmcv.utils import ext_loader
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 
-
+@MODELS.register_module()
 class TemporalSelfAttention(BaseModule):
     """An attention module used in BEVFormer based on Deformable-Detr.
 

@@ -76,6 +76,7 @@ class VADConfig:
             relu_before_extra_convs=True),
         pts_bbox_head=dict(
             type='VADHead',
+            _scope_='mmdet3d',
             map_thresh=0.5,
             dis_thresh=0.2,
             pe_normalization=True,
@@ -88,13 +89,16 @@ class VADConfig:
             valid_fut_ts=6,
             ego_agent_decoder=dict(
                 type='CustomTransformerDecoder',
+                _scope_='mmdet3d',
                 num_layers=1,
                 return_intermediate=False,
                 transformerlayers=dict(
                     type='BaseTransformerLayer',
+                    _scope_='mmdet3d',
                     attn_cfgs=[
                         dict(
                             type='MultiheadAttention',
+                            _scope_='mmdet3d',
                             embed_dims=_dim_,
                             num_heads=8,
                             dropout=0.1),
@@ -104,13 +108,16 @@ class VADConfig:
                     operation_order=('cross_attn', 'norm', 'ffn', 'norm'))),
             ego_map_decoder=dict(
                 type='CustomTransformerDecoder',
+                _scope_='mmdet3d',
                 num_layers=1,
                 return_intermediate=False,
                 transformerlayers=dict(
                     type='BaseTransformerLayer',
+                    _scope_='mmdet3d',
                     attn_cfgs=[
                         dict(
                             type='MultiheadAttention',
+                            _scope_='mmdet3d',
                             embed_dims=_dim_,
                             num_heads=8,
                             dropout=0.1),
@@ -120,13 +127,16 @@ class VADConfig:
                     operation_order=('cross_attn', 'norm', 'ffn', 'norm'))),
             motion_decoder=dict(
                 type='CustomTransformerDecoder',
+                _scope_='mmdet3d',
                 num_layers=1,
                 return_intermediate=False,
                 transformerlayers=dict(
                     type='BaseTransformerLayer',
+                    _scope_='mmdet3d',
                     attn_cfgs=[
                         dict(
                             type='MultiheadAttention',
+                            _scope_='mmdet3d',
                             embed_dims=_dim_,
                             num_heads=8,
                             dropout=0.1),
@@ -136,10 +146,12 @@ class VADConfig:
                     operation_order=('cross_attn', 'norm', 'ffn', 'norm'))),
             motion_map_decoder=dict(
                 type='CustomTransformerDecoder',
+                _scope_='mmdet3d',
                 num_layers=1,
                 return_intermediate=False,
                 transformerlayers=dict(
                     type='BaseTransformerLayer',
+                    _scope_='mmdet3d',
                     attn_cfgs=[
                         dict(
                             type='MultiheadAttention',
@@ -171,6 +183,7 @@ class VADConfig:
             map_code_weights=[1.0, 1.0, 1.0, 1.0],
             transformer=dict(
                 type='VADPerceptionTransformer',
+                _scope_='mmdet3d',
                 map_num_vec=map_num_vec,
                 map_num_pts_per_vec=map_fixed_ptsnum_per_pred_line,
                 rotate_prev_bev=True,
@@ -179,19 +192,23 @@ class VADConfig:
                 embed_dims=_dim_,
                 encoder=dict(
                     type='BEVFormerEncoder',
+                    _scope_='mmdet3d',
                     num_layers=3,
                     pc_range=point_cloud_range,
                     num_points_in_pillar=4,
                     return_intermediate=False,
                     transformerlayers=dict(
                         type='BEVFormerLayer',
+                        _scope_='mmdet3d',
                         attn_cfgs=[
                             dict(
                                 type='TemporalSelfAttention',
+                                _scope_='mmdet3d',
                                 embed_dims=_dim_,
                                 num_levels=1),
                             dict(
                                 type='SpatialCrossAttention',
+                                _scope_='mmdet3d',
                                 pc_range=point_cloud_range,
                                 deformable_attention=dict(
                                     type='MSDeformableAttention3D',
@@ -207,18 +224,22 @@ class VADConfig:
                                         'ffn', 'norm'))),
                 decoder=dict(
                     type='DetectionTransformerDecoder',
+                    _scope_='mmdet3d',
                     num_layers=3,
                     return_intermediate=True,
                     transformerlayers=dict(
                         type='DetrTransformerDecoderLayer',
+                        _scope_='mmdet3d',
                         attn_cfgs=[
                             dict(
                                 type='MultiheadAttention',
+                                _scope_='mmdet3d',
                                 embed_dims=_dim_,
                                 num_heads=8,
                                 dropout=0.1),
                             dict(
                                 type='CustomMSDeformableAttention',
+                                _scope_='mmdet3d',
                                 embed_dims=_dim_,
                                 num_levels=1),
                         ],
@@ -228,18 +249,22 @@ class VADConfig:
                                         'ffn', 'norm'))),
                 map_decoder=dict(
                     type='MapDetectionTransformerDecoder',
+                    _scope_='mmdet3d',
                     num_layers=3,
                     return_intermediate=True,
                     transformerlayers=dict(
                         type='DetrTransformerDecoderLayer',
+                        _scope_='mmdet3d',
                         attn_cfgs=[
                             dict(
                                 type='MultiheadAttention',
+                                _scope_='mmdet3d',
                                 embed_dims=_dim_,
                                 num_heads=8,
                                 dropout=0.1),
                             dict(
                                 type='CustomMSDeformableAttention',
+                                _scope_='mmdet3d',
                                 embed_dims=_dim_,
                                 num_levels=1),
                         ],
@@ -254,7 +279,7 @@ class VADConfig:
                 max_num=100,
                 voxel_size=voxel_size,
                 num_classes=num_classes,
-                _scope_='mmdet',),
+                _scope_='mmdet3d',),
             map_bbox_coder=dict(
                 type='MapNMSFreeCoder',
                 post_center_range=[-20, -35, -20, -35, 20, 35, 20, 35],
@@ -269,31 +294,31 @@ class VADConfig:
                 col_num_embed=bev_w_,
                 ),
             loss_cls=dict(
-                type='FocalLoss',
+                type='mmdet.FocalLoss',
                 use_sigmoid=True,
                 gamma=2.0,
                 alpha=0.25,
                 loss_weight=2.0),
-            loss_bbox=dict(type='L1Loss', loss_weight=0.25),
-            loss_traj=dict(type='L1Loss', loss_weight=0.2),
+            loss_bbox=dict(type='mmdet.L1Loss', loss_weight=0.25),
+            loss_traj=dict(type='mmdet.L1Loss', loss_weight=0.2),
             loss_traj_cls=dict(
-                type='FocalLoss',
+                type='mmdet.FocalLoss',
                 use_sigmoid=True,
                 gamma=2.0,
                 alpha=0.25,
                 loss_weight=0.2),
-            loss_iou=dict(type='GIoULoss', loss_weight=0.0),
+            loss_iou=dict(type='mmdet.GIoULoss', loss_weight=0.0),
             loss_map_cls=dict(
-                type='FocalLoss',
+                type='mmdet.FocalLoss',
                 use_sigmoid=True,
                 gamma=2.0,
                 alpha=0.25,
                 loss_weight=2.0),
-            loss_map_bbox=dict(type='L1Loss', loss_weight=0.0),
-            loss_map_iou=dict(type='GIoULoss', loss_weight=0.0),
+            loss_map_bbox=dict(type='mmdet.L1Loss', loss_weight=0.0),
+            loss_map_iou=dict(type='mmdet.GIoULoss', loss_weight=0.0),
             loss_map_pts=dict(type='PtsL1Loss', loss_weight=1.0),
             loss_map_dir=dict(type='PtsDirCosLoss', loss_weight=0.005),
-            loss_plan_reg=dict(type='L1Loss', loss_weight=1.0),
+            loss_plan_reg=dict(type='mmdet.L1Loss', loss_weight=1.0),
             loss_plan_bound=dict(type='PlanMapBoundLoss', loss_weight=1.0, dis_thresh=1.0),
             loss_plan_col=dict(type='PlanCollisionLoss', loss_weight=1.0),
             loss_plan_dir=dict(type='PlanMapDirectionLoss', loss_weight=0.5)),

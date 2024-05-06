@@ -1,9 +1,8 @@
-from navsim.agents.vad_test.util import run_time
-from navsim.agents.vad.vad_modules.custom_base_transformer_layer import MyCustomBaseTransformerLayer
+from .custom_base_transformer_layer import MyCustomBaseTransformerLayer
 import copy
 import warnings
 from mmdet3d.registry import MODELS
-from mmcv.cnn.bricks.transformer import TransformerLayerSequence
+from mmcv.cnn.bricks.transformer import TransformerLayerSequence, build_transformer_layer
 # from mmcv.runner import force_fp32, auto_fp16
 import numpy as np
 import torch
@@ -14,7 +13,7 @@ from mmcv.utils import ext_loader
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 
-
+@MODELS.register_module()
 class BEVFormerEncoder(TransformerLayerSequence):
 
     """
@@ -26,10 +25,10 @@ class BEVFormerEncoder(TransformerLayerSequence):
             `LN`.
     """
 
-    def __init__(self, *args, pc_range=None, num_points_in_pillar=4, return_intermediate=False, dataset_type='nuscenes',
-                 **kwargs):
-
-        super(BEVFormerEncoder, self).__init__(*args, **kwargs)
+    def __init__(self, pc_range=None, num_points_in_pillar=4,
+                return_intermediate=False, transformerlayers=None,
+                num_layers = 3):
+        super(BEVFormerEncoder, self).__init__(transformerlayers,num_layers)
         self.return_intermediate = return_intermediate
 
         self.num_points_in_pillar = num_points_in_pillar
@@ -224,7 +223,7 @@ class BEVFormerEncoder(TransformerLayerSequence):
 
         return output
 
-
+@MODELS.register_module()
 class BEVFormerLayer(MyCustomBaseTransformerLayer):
     """Implements decoder layer in DETR transformer.
     Args:

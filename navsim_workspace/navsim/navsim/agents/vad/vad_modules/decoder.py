@@ -15,7 +15,7 @@ from mmengine.model import BaseModule, ModuleList, Sequential, xavier_init, cons
 from mmengine.config import ConfigDict
 from mmengine.utils import deprecated_api_warning
 from mmcv.utils import ext_loader
-from navsim.agents.vad.vad_modules.multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
+from .multi_scale_deformable_attn_function import MultiScaleDeformableAttnFunction_fp32, \
     MultiScaleDeformableAttnFunction_fp16
 
 ext_module = ext_loader.load_ext(
