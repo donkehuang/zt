@@ -205,7 +205,8 @@ def ordered_pts_smooth_l1_loss(pred, target):
     # import pdb;pdb.set_trace()
     return loss
 
-#@mmcv.jit(derivate=True)@weighted_loss
+#@mmcv.jit(derivate=True)
+@weighted_loss
 def pts_l1_loss(pred, target):
     """L1 loss.
 

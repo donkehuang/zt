@@ -58,7 +58,7 @@ class VADConfig:
         video_test_mode=True,
         pretrained=dict(img='torchvision://resnet50'),
         img_backbone=dict(
-            type='ResNet',
+            type='mmdet.ResNet',
             depth=50,
             num_stages=4,
             out_indices=(3,),
@@ -67,7 +67,7 @@ class VADConfig:
             norm_eval=True,
             style='pytorch'),
         img_neck=dict(
-            type='FPN',
+            type='mmdet.FPN',
             in_channels=[2048],
             out_channels=_dim_,
             start_level=0,
@@ -469,6 +469,5 @@ class VADConfig:
     # fp16 = dict(loss_scale=512.)
     # find_unused_parameters = True
     checkpoint_config = dict(interval=1, max_keep_ckpts=total_epochs)
-
 
     custom_hooks = [dict(type='CustomSetEpochInfoHook')]

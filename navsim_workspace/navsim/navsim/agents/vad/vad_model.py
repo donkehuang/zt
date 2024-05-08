@@ -5,7 +5,6 @@ import torch.nn as nn
 
 from navsim.agents.vad.vad_config import VADConfig
 from navsim.agents.vad.vad_detectors import VAD
-from navsim.agents.transfuser.transfuser_backbone import TransfuserBackbone
 from navsim.common.enums import StateSE2Index
 from navsim.agents.transfuser.transfuser_features import BoundingBox2DIndex
 # from mmdet.models
@@ -17,8 +16,6 @@ class VADModel(nn.Module):
         super().__init__()
 
         self._config = config
-        print(config.model['img_backbone'])
-        # self._detector = VAD(config.model)
         self._detector = VAD(config.model['use_grid_mask'],
                              config.model['img_backbone'],
                              config.model['img_neck'],
@@ -28,34 +25,19 @@ class VADModel(nn.Module):
 
 
         # TODO donke
-        print("model build by vad")
-        # camera_feature: torch.Tensor = features["camera_feature"]
-        # lidar_feature: torch.Tensor = features["lidar_feature"]
-        # status_feature: torch.Tensor = features["status_feature"]
+        print('-----------------')
+        print("forward start")
+        print('-----------------')
+        # self._detector.vad_detector_forward()
+    
+        VAD(self._config.model['use_grid_mask'],
+                            self._config.model['img_backbone'],
+                            self._config.model['img_neck'],
+                            self._config.model['pts_bbox_head'])
 
-        # batch_size = status_feature.shape[0]
-
-        # bev_feature_upscale, bev_feature, _ = self._backbone(camera_feature, lidar_feature)
-
-        # bev_feature = self._bev_downscale(bev_feature).flatten(-2, -1)
-        # bev_feature = bev_feature.permute(0, 2, 1)
-        # status_encoding = self._status_encoding(status_feature)
-
-        # keyval = torch.concatenate([bev_feature, status_encoding[:, None]], dim=1)
-        # keyval += self._keyval_embedding.weight[None, ...]
-
-        # query = self._query_embedding.weight[None, ...].repeat(batch_size, 1, 1)
-        # query_out = self._tf_decoder(query, keyval)
-
-        # bev_semantic_map = self._bev_semantic_head(bev_feature_upscale)
-        # trajectory_query, agents_query = query_out.split(self._query_splits, dim=1)
-
-        # output: Dict[str, torch.Tensor] = {"bev_semantic_map": bev_semantic_map}
-        # trajectory = self._trajectory_head(trajectory_query)
-        # output.update(trajectory)
-
-        # agents = self._agent_head(agents_query)
-        # output.update(agents)
+        print('-----------------')
+        print("forward successfully")
+        print('-----------------')
 
         return 
 

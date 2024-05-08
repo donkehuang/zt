@@ -5,8 +5,6 @@ from mmdet3d.structures import bbox3d2result
 from scipy.optimize import linear_sum_assignment
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from mmdet3d.registry import MODELS
-# from navsim.agents.projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
-# from projects.mmdet3d_plugin.VAD.planner.metric_stp3 import PlanningMetric1
 from navsim.agents.vad_test.grid_mask import GridMask
 
 @MODELS.register_module()
@@ -33,8 +31,6 @@ class VAD(MVXTwoStageDetector):
                  fut_ts=6,
                  fut_mode=6
                  ):
-        print("pts_backbone")
-        print(pts_backbone)
         super(VAD,
               self).__init__(pts_voxel_encoder,pts_middle_encoder, pts_fusion_layer,
                              img_backbone, pts_backbone, img_neck, pts_neck,
@@ -146,7 +142,7 @@ class VAD(MVXTwoStageDetector):
         dummy_metas = None
         return self.forward_test(img=img, img_metas=[[dummy_metas]])
 
-    def forward(self, return_loss=True, **kwargs):
+    def vad_detector_forward(self, return_loss=True, **kwargs):
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.
         Note this setting will change the expected inputs. When

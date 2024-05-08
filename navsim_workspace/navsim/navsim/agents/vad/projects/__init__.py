@@ -1,1 +1,1 @@
-from .mmdet3d_plugin.bevformer.modules.encoder import *
+from .mmdet3d_plugin import *

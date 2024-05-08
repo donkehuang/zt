@@ -30,13 +30,10 @@ class VADAgent(AbstractAgent):
         checkpoint_path: str = None,
     ):
         super().__init__()
-        print("-----------")
-        print("VADAgent init")
         self._config = config
         self._lr = lr
-
         self._checkpoint_path = checkpoint_path
-        self._transfuser_model = VADModel(config)
+        self._vad_model = VADModel(config)
 
     def name(self) -> str:
         """Inherited, see superclass."""
@@ -55,25 +52,25 @@ class VADAgent(AbstractAgent):
         """Inherited, see superclass."""
         return SensorConfig.build_all_sensors(include=[3])
 
-    # def get_target_builders(self) -> List[AbstractTargetBuilder]:
-    #     return [TransfuserTargetBuilder(config=self._config)]
+    def get_target_builders(self) -> List[AbstractTargetBuilder]:
+        return [TransfuserTargetBuilder(config=self._config)]
 
-    # def get_feature_builders(self) -> List[AbstractFeatureBuilder]:
-    #     return [TransfuserFeatureBuilder(config=self._config)]
+    def get_feature_builders(self) -> List[AbstractFeatureBuilder]:
+        return [TransfuserFeatureBuilder(config=self._config)]
 
-    # def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-    #     return self._transfuser_model(features)
+    def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        return self._vad_model(features)
 
-    # def compute_loss(
-    #     self,
-    #     features: Dict[str, torch.Tensor],
-    #     targets: Dict[str, torch.Tensor],
-    #     predictions: Dict[str, torch.Tensor],
-    # ) -> torch.Tensor:
-    #     return transfuser_loss(targets, predictions, self._config)
+    def compute_loss(
+        self,
+        features: Dict[str, torch.Tensor],
+        targets: Dict[str, torch.Tensor],
+        predictions: Dict[str, torch.Tensor],
+    ) -> torch.Tensor:
+        return
 
-    # def get_optimizers(self) -> Union[Optimizer, Dict[str, Union[Optimizer, LRScheduler]]]:
-    #     return torch.optim.Adam(self._transfuser_model.parameters(), lr=self._lr)
+    def get_optimizers(self) -> Union[Optimizer, Dict[str, Union[Optimizer, LRScheduler]]]:
+        return torch.optim.Adam(self._vad_model.parameters(), lr=self._lr)
 
     # def get_training_callbacks(self) -> List[pl.Callback]:
     #     return [TransfuserCallback(self._config)]

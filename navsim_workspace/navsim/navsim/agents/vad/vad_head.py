@@ -15,7 +15,7 @@ from mmdet.models.layers import inverse_sigmoid
 from mmdet.structures.bbox import bbox_xyxy_to_cxcywh
 from mmcv.cnn import Linear
 from mmengine.model import xavier_init,bias_init_with_prob
-from mmdet.models.utils.misc import (multi_apply, multi_apply )
+from mmdet.models.utils.misc import multi_apply
 from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
 from mmdet.utils import reduce_mean
 from navsim.agents.vad_test.util import get_traj_warmup_loss_weight, normalize_bbox
@@ -26,6 +26,7 @@ from navsim.agents.vad.vad_bbox_coder import CustomNMSFreeCoder
 from navsim.agents.vad.vad_map_bbox_coder import MapNMSFreeCoder
 from navsim.agents.vad.vad_modules import BEVFormerEncoder
 from navsim.agents.vad.vad_perception_transform import VADPerceptionTransformer
+from navsim.agents.vad.projects.mmdet3d_plugin.VAD.utils import PtsL1Loss
 
 @MODELS.register_module()
 class VADHead(DETRHead):
@@ -154,7 +155,6 @@ class VADHead(DETRHead):
         else:
             self.map_code_weights = [1.0, 1.0, 1.0,
                                  1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2]
-        # TODO bbox_coder
         self.bbox_coder = build_bbox_coder(bbox_coder)
         # self.bbox_coder = TASK_UTILS.build(bbox_coder)
         # self.bbox_coder = CustomNMSFreeCoder(bbox_coder['pc_range'],
@@ -167,7 +167,6 @@ class VADHead(DETRHead):
         self.real_h = self.pc_range[4] - self.pc_range[1]
         self.num_cls_fcs = num_cls_fcs - 1
 
-        # TODO map_bbox_coder
         self.map_bbox_coder = build_bbox_coder(map_bbox_coder)
         # self.map_bbox_coder = MapNMSFreeCoder(map_bbox_coder['pc_range'],
         #                                       map_bbox_coder['voxel_size'],
@@ -214,7 +213,8 @@ class VADHead(DETRHead):
         
         # print(VADHead.__bases__[0].__name__)
         # # TODO redefine Detr kwarfs
-        # self.transformer_101 = 
+        self.decoder  = transformer['decoder']
+        self.map_decoder  = transformer['map_decoder']
         vad_transformer = VADPerceptionTransformer(
             transformer['encoder'],
             transformer['decoder'],
@@ -225,6 +225,9 @@ class VADHead(DETRHead):
             transformer['use_can_bus'],
             transformer['map_num_vec'],
             transformer['map_num_pts_per_vec'])
+        self.num_query = kwargs['num_query']
+        self.in_channels = kwargs['in_channels']
+        self.positional_encoding = kwargs['positional_encoding']
         kwargs.pop('num_query')
         kwargs.pop('in_channels')
         kwargs.pop('positional_encoding')
@@ -258,17 +261,17 @@ class VADHead(DETRHead):
             self.map_sampler = build_sampler(sampler_cfg, context=self)
         
         # TODO
-        # self.loss_traj = build_loss(loss_traj)
-        # self.loss_traj_cls = build_loss(loss_traj_cls)
-        # self.loss_map_bbox = build_loss(loss_map_bbox)
-        # self.loss_map_cls = build_loss(loss_map_cls)
-        # self.loss_map_iou = build_loss(loss_map_iou)
-        # self.loss_map_pts = build_loss(loss_map_pts)
-        # self.loss_map_dir = build_loss(loss_map_dir)
-        # self.loss_plan_reg = build_loss(loss_plan_reg)
-        # self.loss_plan_bound = build_loss(loss_plan_bound)
-        # self.loss_plan_col = build_loss(loss_plan_col)
-        # self.loss_plan_dir = build_loss(loss_plan_dir)
+        self.loss_traj = MODELS.build(loss_traj)
+        self.loss_traj_cls = MODELS.build(loss_traj_cls)
+        self.loss_map_bbox = MODELS.build(loss_map_bbox)
+        self.loss_map_cls = MODELS.build(loss_map_cls)
+        self.loss_map_iou = MODELS.build(loss_map_iou)
+        self.loss_map_pts = MODELS.build(loss_map_pts)
+        self.loss_map_dir = MODELS.build(loss_map_dir)
+        self.loss_plan_reg = MODELS.build(loss_plan_reg)
+        self.loss_plan_bound = MODELS.build(loss_plan_bound)
+        self.loss_plan_col = MODELS.build(loss_plan_col)
+        self.loss_plan_dir = MODELS.build(loss_plan_dir)
 
     def _init_layers(self):
         """Initialize classification branch and regression branch of head."""
@@ -325,10 +328,10 @@ class VADHead(DETRHead):
         # encode feature map when as_two_stage is True.
         num_decoder_layers = 1
         num_map_decoder_layers = 1
-        if self.transformer.decoder is not None:
-            num_decoder_layers = self.transformer.decoder.num_layers
-        if self.transformer.map_decoder is not None:
-            num_map_decoder_layers = self.transformer.map_decoder.num_layers
+        if self.decoder is not None:
+            num_decoder_layers = self.decoder['num_layers']
+        if self.map_decoder is not None:
+            num_map_decoder_layers = self.map_decoder['num_layers']
         num_motion_decoder_layers = 1
         num_pred = (num_decoder_layers + 1) if \
             self.as_two_stage else num_decoder_layers
