@@ -1,11 +1,16 @@
 from dataclasses import dataclass
 from typing import Any, List, Tuple, Dict
-
+from nuplan.planning.simulation.trajectory.trajectory_sampling import TrajectorySampling
+from nuplan.common.maps.abstract_map import SemanticMapLayer
+from nuplan.common.actor_state.tracked_objects_types import TrackedObjectType
 
 
 @dataclass
 class VADConfig:
 
+    trajectory_sampling: TrajectorySampling = TrajectorySampling(
+        time_horizon=4, interval_length=0.5
+    )
     _base_ = [
         '../datasets/custom_nus-3d.py',
         '../_base_/default_runtime.py'
@@ -13,6 +18,56 @@ class VADConfig:
     #
     plugin = True
     plugin_dir = 'projects/mmdet3d_plugin/'
+
+    # detection
+    num_bounding_boxes: int = 30
+
+    lidar_min_x: float = -32
+    lidar_max_x: float = 32
+    lidar_min_y: float = -32
+    lidar_max_y: float = 32
+
+    lidar_split_height: float = 0.2
+    use_ground_plane: bool = False
+
+    # new
+    lidar_seq_len: int = 1
+
+    bev_pixel_width: int = 256
+    bev_pixel_height: int = 128
+    bev_pixel_size: float = 0.25
+    num_bev_classes = 7
+    bev_features_channels: int = 64
+    bev_down_sample_factor: int = 4
+    bev_upsample_factor: int = 2
+
+    @property
+    def bev_semantic_frame(self) -> Tuple[int, int]:
+        return (self.bev_pixel_height, self.bev_pixel_width)
+    
+    @property
+    def bev_radius(self) -> float:
+        values = [self.lidar_min_x, self.lidar_max_x, self.lidar_min_y, self.lidar_max_y]
+        return max([abs(value) for value in values])
+    
+    # BEV mapping
+    bev_semantic_classes = {
+        1: ("polygon", [SemanticMapLayer.LANE, SemanticMapLayer.INTERSECTION]),  # road
+        2: ("polygon", [SemanticMapLayer.WALKWAYS]),  # walkways
+        3: ("linestring", [SemanticMapLayer.LANE, SemanticMapLayer.LANE_CONNECTOR]),  # centerline
+        4: (
+            "box",
+            [
+                TrackedObjectType.CZONE_SIGN,
+                TrackedObjectType.BARRIER,
+                TrackedObjectType.TRAFFIC_CONE,
+                TrackedObjectType.GENERIC_OBJECT,
+            ],
+        ),  # static_objects
+        5: ("box", [TrackedObjectType.VEHICLE]),  # vehicles
+        6: ("box", [TrackedObjectType.PEDESTRIAN]),  # pedestrians
+    }
+
 
     # If point cloud range is changed, the models should also change their point
     # cloud range accordingly

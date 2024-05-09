@@ -33,7 +33,10 @@ class VADAgent(AbstractAgent):
         self._config = config
         self._lr = lr
         self._checkpoint_path = checkpoint_path
-        self._vad_model = VADModel(config)
+        self._vad_model = VADModel(config.model['use_grid_mask'],
+                                   config.model['img_backbone'],
+                                   config.model['img_neck'],
+                                   config.model['pts_bbox_head'])
 
     def name(self) -> str:
         """Inherited, see superclass."""
@@ -59,7 +62,7 @@ class VADAgent(AbstractAgent):
         return [TransfuserFeatureBuilder(config=self._config)]
 
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        return self._vad_model(features)
+        return self._vad_model.forward(features)
 
     def compute_loss(
         self,
@@ -67,7 +70,7 @@ class VADAgent(AbstractAgent):
         targets: Dict[str, torch.Tensor],
         predictions: Dict[str, torch.Tensor],
     ) -> torch.Tensor:
-        return
+        return self._vad_model.vad_loss()
 
     def get_optimizers(self) -> Union[Optimizer, Dict[str, Union[Optimizer, LRScheduler]]]:
         return torch.optim.Adam(self._vad_model.parameters(), lr=self._lr)
