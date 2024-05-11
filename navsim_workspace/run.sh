@@ -8,7 +8,7 @@ export PYTHONPATH=$PYTHONPATH:${DIR}/navsim:${DIR}/nuplan-devkit
 
 if [ $# -lt 1 ]; then
   echo "run.sh [cmd]"
-  echo "cmd: notebook, cache, training, training_transfuser, eval_cv, eval_human, eval_mlp, eval_vad"
+  echo "cmd: notebook, cache, training, training_transfuser, training_vad, eval_cv, eval_human, eval_mlp, eval_vad"
   exit
 fi
 
@@ -30,6 +30,10 @@ case $1 in
     "training_transfuser")
         # training
         ./navsim/scripts/training/run_transfuser_training.sh
+        ;;
+     "training_vad")
+        # training vad
+        ./navsim/scripts/training/run_vad_training.sh
         ;;
     "eval_cv")
         # const velocity agent evaluation
