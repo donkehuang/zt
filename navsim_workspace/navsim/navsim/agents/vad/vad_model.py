@@ -21,8 +21,8 @@ class VADModel(MVXTwoStageDetector):
     """
     def __init__(self,
                  use_grid_mask=False,
-                 img_neck=None,
                  img_backbone=None,
+                 img_neck=None,
                  pts_bbox_head=None,
                  pts_voxel_layer=None,
                  pts_voxel_encoder=None,
@@ -186,7 +186,12 @@ class VADModel(MVXTwoStageDetector):
 
         with torch.no_grad():
             prev_bev = None
-            bs, len_queue, num_cams, C, H, W = imgs_queue.shape
+            len_queue = 1
+            num_cams = 1
+            if imgs_queue.dim() == 4:
+                bs, C, H, W = imgs_queue.shape
+            elif imgs_queue.dim() == 6:
+                bs, len_queue, num_cams, C, H, W = imgs_queue.shape
             imgs_queue = imgs_queue.reshape(bs*len_queue, num_cams, C, H, W)
             img_feats_list = self.extract_feat(img=imgs_queue, len_queue=len_queue)
             for i in range(len_queue):
@@ -247,7 +252,7 @@ class VADModel(MVXTwoStageDetector):
         """
 
         logging.info(f"=== img shape: {img.shape}")
-        len_queue = img.size(1)
+        len_queue = img.size(0)
         # prev_img = img[:, :-1, ...]
         prev_img = img
         # img = img[:, -1, ...]
@@ -258,7 +263,7 @@ class VADModel(MVXTwoStageDetector):
         # prev_bev = self.obtain_history_bev(prev_img, prev_img_metas)
         # import pdb;pdb.set_trace()
 
-        # prev_bev = self.obtain_history_bev(prev_img, prev_img_metas) if len_queue > 1 else None
+        prev_bev = self.obtain_history_bev(prev_img, prev_img_metas) if len_queue > 1 else None
 
         # img_metas = [each[len_queue-1] for each in img_metas]
 

@@ -27,6 +27,7 @@ from navsim.agents.vad.vad_map_bbox_coder import MapNMSFreeCoder
 from navsim.agents.vad.vad_modules import BEVFormerEncoder
 from navsim.agents.vad.vad_perception_transform import VADPerceptionTransformer
 from navsim.agents.vad.projects.mmdet3d_plugin.VAD.utils import PtsL1Loss
+from mmdet.models.layers import LearnedPositionalEncoding
 
 @MODELS.register_module()
 class VADHead(DETRHead):
@@ -215,7 +216,16 @@ class VADHead(DETRHead):
         # # TODO redefine Detr kwarfs
         self.decoder  = transformer['decoder']
         self.map_decoder  = transformer['map_decoder']
-        vad_transformer = VADPerceptionTransformer(
+        # vad_transformer = VADPerceptionTransformer(
+        self.num_query = kwargs['num_query']
+        self.in_channels = kwargs['in_channels']
+        positional_encoding = kwargs['positional_encoding']
+        kwargs.pop('num_query')
+        kwargs.pop('in_channels')
+        kwargs.pop('positional_encoding')
+        super(VADHead, self).__init__(*args, **kwargs)
+        self.positional_encoding = MODELS.build(positional_encoding)
+        self.transformer = VADPerceptionTransformer(
             transformer['encoder'],
             transformer['decoder'],
             transformer['map_decoder'],
@@ -225,13 +235,6 @@ class VADHead(DETRHead):
             transformer['use_can_bus'],
             transformer['map_num_vec'],
             transformer['map_num_pts_per_vec'])
-        self.num_query = kwargs['num_query']
-        self.in_channels = kwargs['in_channels']
-        self.positional_encoding = kwargs['positional_encoding']
-        kwargs.pop('num_query')
-        kwargs.pop('in_channels')
-        kwargs.pop('positional_encoding')
-        super(VADHead, self).__init__(*args, **kwargs)
         # super(VADHead, self).__init__(*args, transformer=transformer, **kwargs)
         self.code_weights = nn.Parameter(torch.tensor(
             self.code_weights, requires_grad=False), requires_grad=False)

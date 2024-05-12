@@ -28,7 +28,7 @@ from navsim.planning.training.abstract_feature_target_builder import (
 logger = logging.getLogger(__name__)
 
 
-class TransfuserFeatureBuilder(AbstractFeatureBuilder):
+class VADFeatureBuilder(AbstractFeatureBuilder):
     def __init__(self, config: TransfuserConfig):
         self._config = config
         logger.info(f"feature build config:{config}")
@@ -65,17 +65,16 @@ class TransfuserFeatureBuilder(AbstractFeatureBuilder):
         cameras = agent_input.cameras[-1]
 
         # Crop to ensure 4:1 aspect ratio
-        l0 = cameras.cam_l0.image[28:-28, 416:-416]
+        # l0 = cameras.cam_l0.image[28:-28, 416:-416]
         f0 = cameras.cam_f0.image[28:-28]
-        r0 = cameras.cam_r0.image[28:-28, 416:-416]
+        # r0 = cameras.cam_r0.image[28:-28, 416:-416]
 
         # stitch l0, f0, r0 images
-        stitched_image = np.concatenate([l0, f0, r0], axis=1)
-        resized_image = cv2.resize((2048, 256),stitched_image)
+        # stitched_image = np.concatenate([l0, f0, r0], axis=1)
+        stitched_image = np.concatenate([f0], axis=1)
+        resized_image = cv2.resize(stitched_image,(2048, 256))
         tensor_image = transforms.ToTensor()(resized_image)
-        print("----------------")
-        logger.info(f"=== _get_camera_feature:{tensor_image.shape}")
-        print("----------------")
+        # logger.info(f"=== _get_camera_feature:{tensor_image.shape}")
 
 
         return tensor_image
@@ -128,7 +127,7 @@ class TransfuserFeatureBuilder(AbstractFeatureBuilder):
         return torch.tensor(features)
 
 
-class TransfuserTargetBuilder(AbstractTargetBuilder):
+class VADTargetBuilder(AbstractTargetBuilder):
     def __init__(self, config: TransfuserConfig):
         self._config = config
 

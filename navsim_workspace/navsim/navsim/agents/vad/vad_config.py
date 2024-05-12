@@ -102,8 +102,8 @@ class VADConfig:
     _pos_dim_ = _dim_//2
     _ffn_dim_ = _dim_*2
     _num_levels_ = 1
-    bev_h_ = 100
-    bev_w_ = 100
+    bev_h_ = 128
+    bev_w_ = 256
     queue_length = 3 # each sequence contains `queue_length` frames.
     total_epochs = 60
 
@@ -343,7 +343,7 @@ class VADConfig:
                 voxel_size=voxel_size,
                 num_classes=map_num_classes),
             positional_encoding=dict(
-                type='LearnedPositionalEncoding',
+                type='mmdet.LearnedPositionalEncoding',
                 num_feats=_pos_dim_,
                 row_num_embed=bev_h_,
                 col_num_embed=bev_w_,

@@ -16,11 +16,9 @@ from navsim.planning.training.abstract_feature_target_builder import (
 from navsim.agents.vad.vad_config import VADConfig
 from navsim.agents.vad.vad_head import VADHead
 from navsim.agents.vad.vad_model import VADModel
-from navsim.agents.transfuser.transfuser_callback import TransfuserCallback
-from navsim.agents.transfuser.transfuser_loss import transfuser_loss
-from navsim.agents.transfuser.transfuser_features import (
-    TransfuserFeatureBuilder,
-    TransfuserTargetBuilder,
+from navsim.agents.vad.vad_features import (
+    VADFeatureBuilder,
+    VADTargetBuilder,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,10 +60,10 @@ class VADAgent(AbstractAgent):
         return SensorConfig.build_all_sensors(include=[3])
 
     def get_target_builders(self) -> List[AbstractTargetBuilder]:
-        return [TransfuserTargetBuilder(config=self._config)]
+        return [VADTargetBuilder(config=self._config)]
 
     def get_feature_builders(self) -> List[AbstractFeatureBuilder]:
-        return [TransfuserFeatureBuilder(config=self._config)]
+        return [VADFeatureBuilder(config=self._config)]
 
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         logger.info(f"=== features:{features}")

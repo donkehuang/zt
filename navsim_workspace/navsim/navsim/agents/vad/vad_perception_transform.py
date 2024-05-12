@@ -143,11 +143,6 @@ class VADPerceptionTransformer(BaseModule):
                  rotate_center=[100, 100],
                  **kwargs):
         super(VADPerceptionTransformer, self).__init__(**kwargs)
-        # self.encoder = BEVFormerEncoder(encoder['pc_range'],
-        #                                 encoder['num_points_in_pillar'],
-        #                                 encoder['return_intermediate'],
-        #                                 encoder['transformerlayers'],
-        #                                 encoder['num_layers'],)
         self.encoder = build_transformer_layer_sequence(encoder)
         if decoder is not None:
             self.decoder = build_transformer_layer_sequence(decoder)
