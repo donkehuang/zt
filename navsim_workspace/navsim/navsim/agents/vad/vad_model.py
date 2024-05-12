@@ -1,3 +1,5 @@
+import logging
+
 from typing import Dict
 import numpy as np
 import torch
@@ -11,6 +13,8 @@ from mmdet3d.structures import bbox3d2result
 from scipy.optimize import linear_sum_assignment
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from navsim.agents.vad_test.grid_mask import GridMask
+
+logger = logging.getLogger(__name__)
 
 class VADModel(MVXTwoStageDetector):
     """VAD model.
@@ -59,7 +63,8 @@ class VADModel(MVXTwoStageDetector):
 
         self.planning_metric = None
 
-    def forward(self, return_loss=True, **kwargs):
+    # def forward(self, return_loss=True, **kwargs):
+    def forward(self, features: Dict[str, torch.Tensor]):
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.
         Note this setting will change the expected inputs. When
@@ -69,18 +74,28 @@ class VADModel(MVXTwoStageDetector):
         list[list[dict]]), with the outer list indicating test time
         augmentations.
         """
-        if return_loss:
-            print("kwargs")
-            print(kwargs)
-            return self.forward_train(**kwargs)
-        else:
-            return self.forward_test(**kwargs)
+        # if return_loss:
+        #     logger.info(f"kwargs:{kwargs}")
+        #     return self.forward_train(**kwargs)
+        # else:
+        #     return self.forward_test(**kwargs)
+        camera_feature: torch.Tensor = features["camera_feature"]
+        # lidar_feature: torch.Tensor = features["lidar_feature"]
+        status_feature: torch.Tensor = features["status_feature"]
+
+        batch_size = status_feature.shape[0]
+        # logger.info(f"=== camera feature :{camera_feature}")
+        logger.info(f"=== camera feature shape:{camera_feature.shape}")
+        logger.info(f"=== status feature:{status_feature}")
+        logger.info(f"=== batch_size:{batch_size}")
+        self.forward_train(img=camera_feature)
+
 
     def extract_img_feat(self, img, img_metas, len_queue=None):
         """Extract features of images."""
         B = img.size(0)
         if img is not None:
-            
+
             # input_shape = img.shape[-2:]
             # # update real input shape of each single img
             # for img_meta in img_metas:
@@ -94,6 +109,7 @@ class VADModel(MVXTwoStageDetector):
             if self.use_grid_mask:
                 img = self.grid_mask(img)
 
+            logging.info(f'vad img backbone:{self.img_backbone}')
             img_feats = self.img_backbone(img)
             if isinstance(img_feats, dict):
                 img_feats = list(img_feats.values())
@@ -116,7 +132,7 @@ class VADModel(MVXTwoStageDetector):
         """Extract features from images and points."""
 
         img_feats = self.extract_img_feat(img, img_metas, len_queue=len_queue)
-        
+
         return img_feats
 
     def forward_pts_train(self,
@@ -124,7 +140,7 @@ class VADModel(MVXTwoStageDetector):
                           gt_bboxes_3d,
                           gt_labels_3d,
                           map_gt_bboxes_3d,
-                          map_gt_labels_3d,                          
+                          map_gt_labels_3d,
                           img_metas,
                           gt_bboxes_ignore=None,
                           map_gt_bboxes_ignore=None,
@@ -162,7 +178,7 @@ class VADModel(MVXTwoStageDetector):
     def forward_dummy(self, img):
         dummy_metas = None
         return self.forward_test(img=img, img_metas=[[dummy_metas]])
-    
+
     def obtain_history_bev(self, imgs_queue, img_metas_list):
         """Obtain history BEV features iteratively. To save GPU memory, gradients are not calculated.
         """
@@ -229,18 +245,27 @@ class VADModel(MVXTwoStageDetector):
         Returns:
             dict: Losses of different branches.
         """
-        
+
+        logging.info(f"=== img shape: {img.shape}")
         len_queue = img.size(1)
-        prev_img = img[:, :-1, ...]
-        img = img[:, -1, ...]
+        # prev_img = img[:, :-1, ...]
+        prev_img = img
+        # img = img[:, -1, ...]
+
+        logging.info(f"=== after img shape: {img.shape}")
 
         prev_img_metas = copy.deepcopy(img_metas)
         # prev_bev = self.obtain_history_bev(prev_img, prev_img_metas)
         # import pdb;pdb.set_trace()
-        prev_bev = self.obtain_history_bev(prev_img, prev_img_metas) if len_queue > 1 else None
 
-        img_metas = [each[len_queue-1] for each in img_metas]
+        # prev_bev = self.obtain_history_bev(prev_img, prev_img_metas) if len_queue > 1 else None
+
+        # img_metas = [each[len_queue-1] for each in img_metas]
+
         img_feats = self.extract_feat(img=img, img_metas=img_metas)
+
+        logging.info(f"=== vad img features: {img_feats}")
+
         self.losses_pts = self.forward_pts_train(img_feats, gt_bboxes_3d, gt_labels_3d,
                                             map_gt_bboxes_3d, map_gt_labels_3d, img_metas,
                                             gt_bboxes_ignore, map_gt_bboxes_ignore, prev_bev,
@@ -250,7 +275,7 @@ class VADModel(MVXTwoStageDetector):
         output: Dict[str, torch.Tensor] = {"img_feats": img_feats}
         output.update(self.losses_pts)
         return output
-    
+
     def vad_loss(self):
         # TODO redefine loss function
         return self.losses_pts
@@ -374,7 +399,7 @@ class VADModel(MVXTwoStageDetector):
         """Test function"""
         mapped_class_names = [
             'car', 'truck', 'construction_vehicle', 'bus',
-            'trailer', 'barrier', 'motorcycle', 'bicycle', 
+            'trailer', 'barrier', 'motorcycle', 'bicycle',
             'pedestrian', 'traffic_cone'
         ]
 
@@ -487,7 +512,7 @@ class VADModel(MVXTwoStageDetector):
 
         Returns:
             matched_bbox_result (np.array): assigned pred index for each gt box [num_gt_bbox].
-        """     
+        """
         dynamic_list = [0,1,3,4,6,7,8]
         matched_bbox_result = torch.ones(
             (len(gt_bbox)), dtype=torch.long) * -1  # -1: not assigned
@@ -536,7 +561,7 @@ class VADModel(MVXTwoStageDetector):
         motion_cls_names = ['car', 'pedestrian']
         motion_metric_names = ['gt', 'cnt_ade', 'cnt_fde', 'hit',
                                'fp', 'ADE', 'FDE', 'MR']
-        
+
         metric_dict = {}
         for met in motion_metric_names:
             for cls in motion_cls_names:
@@ -639,10 +664,10 @@ class VADModel(MVXTwoStageDetector):
                 metric_dict['plan_L2_{}s'.format(i+1)] = 0.0
                 metric_dict['plan_obj_col_{}s'.format(i+1)] = 0.0
                 metric_dict['plan_obj_box_col_{}s'.format(i+1)] = 0.0
-            
+
         return metric_dict
 
-    def set_epoch(self, epoch): 
+    def set_epoch(self, epoch):
         self.pts_bbox_head.epoch = epoch
 
 

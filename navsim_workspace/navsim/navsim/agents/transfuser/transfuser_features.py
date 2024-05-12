@@ -1,6 +1,7 @@
 from enum import IntEnum
 from typing import Any, Dict, List, Tuple
 import cv2
+import logging
 import numpy as np
 import numpy.typing as npt
 
@@ -24,10 +25,13 @@ from navsim.planning.training.abstract_feature_target_builder import (
     AbstractTargetBuilder,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class TransfuserFeatureBuilder(AbstractFeatureBuilder):
     def __init__(self, config: TransfuserConfig):
         self._config = config
+        logger.info(f"feature build config:{config}")
 
     def get_unique_name(self) -> str:
         """Inherited, see superclass."""
@@ -46,6 +50,8 @@ class TransfuserFeatureBuilder(AbstractFeatureBuilder):
                 torch.tensor(agent_input.ego_statuses[-1].ego_acceleration, dtype=torch.float32),
             ],
         )
+
+        logger.info(f"=== features:{features}")
 
         return features
 

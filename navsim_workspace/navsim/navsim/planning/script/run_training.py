@@ -6,6 +6,7 @@ from omegaconf import DictConfig
 from pathlib import Path
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
+import sys
 
 from navsim.planning.training.dataset import CacheOnlyDataset, Dataset
 from navsim.planning.training.agent_lightning_module import AgentLightningModule
@@ -33,6 +34,10 @@ def build_datasets(cfg: DictConfig, agent: AbstractAgent) -> Tuple[Dataset, Data
 
     data_path = Path(cfg.navsim_log_path)
     sensor_blobs_path = Path(cfg.sensor_blobs_path)
+
+    logging.info(f"=== sensor config:{agent.get_sensor_config()}")
+    logging.info(f"=== sensor blobs path: {sensor_blobs_path}")
+    logging.info(f"=== data path: {data_path}")
 
     train_scene_loader = SceneLoader(
         sensor_blobs_path=sensor_blobs_path,
@@ -109,6 +114,7 @@ def main(cfg: DictConfig) -> None:
     logger.info("Num validation samples: %d", len(val_data))
 
     logger.info("Building Trainer")
+
     trainer = pl.Trainer(**cfg.trainer.params, callbacks=agent.get_training_callbacks())
 
     logger.info("Starting Training")

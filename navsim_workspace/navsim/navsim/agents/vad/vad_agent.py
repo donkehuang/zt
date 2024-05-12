@@ -1,3 +1,5 @@
+import logging
+
 from typing import Any, List, Dict, Union
 
 import torch
@@ -21,6 +23,7 @@ from navsim.agents.transfuser.transfuser_features import (
     TransfuserTargetBuilder,
 )
 
+logger = logging.getLogger(__name__)
 
 class VADAgent(AbstractAgent):
     def __init__(
@@ -37,6 +40,9 @@ class VADAgent(AbstractAgent):
                                    config.model['img_backbone'],
                                    config.model['img_neck'],
                                    config.model['pts_bbox_head'])
+        logging.info(f"=== VADAgent Config: {config}")
+        logging.info(f"=== VADAgent model Config: {config.model}")
+        logging.info(f"=== img backbone:{config.model['img_backbone']}")
 
     def name(self) -> str:
         """Inherited, see superclass."""
@@ -62,6 +68,8 @@ class VADAgent(AbstractAgent):
         return [TransfuserFeatureBuilder(config=self._config)]
 
     def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        logger.info(f"=== features:{features}")
+        logger.info(f"=== VAD config:{self._config}")
         return self._vad_model.forward(features)
 
     def compute_loss(

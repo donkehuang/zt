@@ -3,7 +3,7 @@ hydra:
     dir: ${output_dir}
   output_subdir: ${output_dir}/code/hydra           # Store hydra's config breakdown here for debugging
   searchpath:                                       # Only <exp_dir> in these paths are discoverable
-    - pkg://navsim.planning.script.config.common 
+    - pkg://navsim.planning.script.config.common
     # - pkg://navsim.planning.script.config.pdm_scoring
     # - pkg://navsim.planning.script.config.training
 
@@ -21,14 +21,17 @@ force_cache_computation: false
 
 dataloader:
   params:
-    batch_size: 32  # number of samples per batch
-    num_workers: 4  # number of workers for data loading
+    # batch_size: 32  # number of samples per batch
+    batch_size: 1  # number of samples per batch
+    # num_workers: 4  # number of workers for data loading
+    num_workers: 1  # number of workers for data loading
     pin_memory: true  # pin memory for faster GPU transfer
     prefetch_factor: 2  # number of samples loaded in advance by each worker
 
 trainer:
   params:
-    max_epochs: 20  # maximum number of training epochs
+    # max_epochs: 20  # maximum number of training epochs
+    max_epochs: 1  # maximum number of training epochs
     check_val_every_n_epoch: 1  # run validation set every n training epochs
     val_check_interval: 1.0  # [%] run validation set every X% of training set
 
@@ -39,6 +42,7 @@ trainer:
     strategy: ddp
     precision: 16-mixed  # floating point precision
     num_nodes: 1  # Number of nodes used for training
+    devices: 1 # gpu limit TODO: remove after debug
 
     num_sanity_val_steps: 0  # number of validation steps to run before training begins
     fast_dev_run: false  # runs 1 batch of train/val/test for sanity

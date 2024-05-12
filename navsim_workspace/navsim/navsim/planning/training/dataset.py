@@ -55,6 +55,9 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
             log_names=self.log_names,
         )
         self.tokens = list(self._valid_cache_paths.keys())
+        logger.info(f"=== log_names:{self.log_names}")
+        # logger.info(f"=== tokens:{self.tokens}")
+
 
     def __len__(self):
         return len(self.tokens)
@@ -81,7 +84,7 @@ class CacheOnlyDataset(torch.utils.data.Dataset):
                     found_caches.append(data_dict_path.is_file())
                 if all(found_caches):
                     valid_cache_paths[token_path.name] = token_path
-
+        # logger.info(f"=== valid_cache_paths:{valid_cache_paths}")
         return valid_cache_paths
 
     def _load_scene_with_token(
@@ -161,13 +164,16 @@ class Dataset(torch.utils.data.Dataset):
         for builder in self._feature_builders:
             data_dict_path = token_path / (builder.get_unique_name() + ".gz")
             data_dict = builder.compute_features(agent_input)
+            logging.info(f"=== generate feature file:{data_dict_path}")
             dump_feature_target_to_pickle(data_dict_path, data_dict)
 
         for builder in self._target_builders:
             data_dict_path = token_path / (builder.get_unique_name() + ".gz")
             data_dict = builder.compute_targets(scene)
+            logging.info(f"=== generate target file:{data_dict_path}")
             dump_feature_target_to_pickle(data_dict_path, data_dict)
 
+        logging.info(f"=== token:{token} => {token_path}")
         self._valid_cache_paths[token] = token_path
 
     def _load_scene_with_token(
