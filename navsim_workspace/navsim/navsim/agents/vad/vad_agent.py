@@ -76,7 +76,7 @@ class VADAgent(AbstractAgent):
         targets: Dict[str, torch.Tensor],
         predictions: Dict[str, torch.Tensor],
     ) -> torch.Tensor:
-        return self._vad_model.vad_loss()
+        return self._vad_model.vad_loss(features, targets, predictions)
 
     def get_optimizers(self) -> Union[Optimizer, Dict[str, Union[Optimizer, LRScheduler]]]:
         return torch.optim.Adam(self._vad_model.parameters(), lr=self._lr)

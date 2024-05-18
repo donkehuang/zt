@@ -1,6 +1,6 @@
 import logging
 
-from typing import Dict
+from typing import Dict, Union
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,6 +15,13 @@ from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from navsim.agents.vad_test.grid_mask import GridMask
 
 logger = logging.getLogger(__name__)
+
+def dict_to_device(
+    dict: Dict[str, torch.Tensor], device: Union[torch.device, str]
+) -> Dict[str, torch.Tensor]:
+    for key in dict.keys():
+        dict[key] = dict[key].to(device)
+    return dict
 
 class VADModel(MVXTwoStageDetector):
     """VAD model.
@@ -64,7 +71,7 @@ class VADModel(MVXTwoStageDetector):
         self.planning_metric = None
 
     # def forward(self, return_loss=True, **kwargs):
-    def forward(self, features: Dict[str, torch.Tensor]):
+    def forward(self, features: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.
         Note this setting will change the expected inputs. When
@@ -81,14 +88,42 @@ class VADModel(MVXTwoStageDetector):
         #     return self.forward_test(**kwargs)
         camera_feature: torch.Tensor = features["camera_feature"]
         # lidar_feature: torch.Tensor = features["lidar_feature"]
+        img_metas = {}
         status_feature: torch.Tensor = features["status_feature"]
+        img_metas["status_feature"] = status_feature
+        img_metas["can_bus"] = features["can_bus"]
+        img_metas["lidar2img"] = features["lidar2img"]
+        img_metas["camera_translation"] = features["camera_translation"]
+        img_metas["transform_matrix"] = features["transform_matrix"]
+        # meta = {}
+        # meta = dict_to_device(img_metas, "cpu")
 
         batch_size = status_feature.shape[0]
         # logger.info(f"=== camera feature :{camera_feature}")
         logger.info(f"=== camera feature shape:{camera_feature.shape}")
         logger.info(f"=== status feature:{status_feature}")
         logger.info(f"=== batch_size:{batch_size}")
-        self.forward_train(img=camera_feature)
+        len_queue = camera_feature.size(0)
+        # prev_img = img[:, :-1, ...]
+        prev_img = camera_feature
+        # img = img[:, -1, ...]
+
+        prev_img_metas = copy.deepcopy(img_metas)
+        # prev_bev = self.obtain_history_bev(prev_img, prev_img_metas)
+        # import pdb;pdb.set_trace()
+
+        prev_bev = self.obtain_history_bev(prev_img, prev_img_metas) if len_queue > 1 else None
+
+        # img_metas = [each[len_queue-1] for each in img_metas]
+
+        img_feats = self.extract_feat(img=camera_feature, img_metas=img_metas)
+
+        logging.info(f"=== vad img features: {img_feats}")
+        output = {}
+        output['img_feats'] = img_feats
+        output['img_metas'] = img_metas
+        output['prev_bev'] = prev_bev
+        return output
 
 
     def extract_img_feat(self, img, img_metas, len_queue=None):
@@ -203,87 +238,38 @@ class VADModel(MVXTwoStageDetector):
             self.train()
             return prev_bev
 
-    # # @auto_fp16(apply_to=('img', 'points'))
-    # # @force_fp32(apply_to=('img','points','prev_bev'))
-    def forward_train(self,
-                      points=None,
-                      img_metas=None,
-                      gt_bboxes_3d=None,
-                      gt_labels_3d=None,
-                      map_gt_bboxes_3d=None,
-                      map_gt_labels_3d=None,
-                      gt_labels=None,
-                      gt_bboxes=None,
-                      img=None,
-                      proposals=None,
-                      gt_bboxes_ignore=None,
-                      map_gt_bboxes_ignore=None,
-                      img_depth=None,
-                      img_mask=None,
-                      ego_his_trajs=None,
-                      ego_fut_trajs=None,
-                      ego_fut_masks=None,
-                      ego_fut_cmd=None,
-                      ego_lcf_feat=None,
-                      gt_attr_labels=None
-                      ):
-        """Forward training function.
+    def vad_loss(
+        self,
+        features: Dict[str, torch.Tensor],
+        targets: Dict[str, torch.Tensor],
+        predictions: Dict[str, torch.Tensor],        
+    ) -> torch.Tensor:
+        
+        """Forward function'
         Args:
-            points (list[torch.Tensor], optional): Points of each sample.
-                Defaults to None.
-            img_metas (list[dict], optional): Meta information of each sample.
-                Defaults to None.
-            gt_bboxes_3d (list[:obj:`BaseInstance3DBoxes`], optional):
-                Ground truth 3D boxes. Defaults to None.
-            gt_labels_3d (list[torch.Tensor], optional): Ground truth labels
-                of 3D boxes. Defaults to None.
-            gt_labels (list[torch.Tensor], optional): Ground truth labels
-                of 2D boxes in images. Defaults to None.
-            gt_bboxes (list[torch.Tensor], optional): Ground truth 2D boxes in
-                images. Defaults to None.
-            img (torch.Tensor optional): Images of each sample with shape
-                (N, C, H, W). Defaults to None.
-            proposals ([list[torch.Tensor], optional): Predicted proposals
-                used for training Fast RCNN. Defaults to None.
+            pts_feats (list[torch.Tensor]): Features of point cloud branch
+            gt_bboxes_3d (list[:obj:`BaseInstance3DBoxes`]): Ground truth
+                boxes for each sample.
+            gt_labels_3d (list[torch.Tensor]): Ground truth labels for
+                boxes of each sampole
+            img_metas (list[dict]): Meta information of samples.
             gt_bboxes_ignore (list[torch.Tensor], optional): Ground truth
-                2D boxes in images to be ignored. Defaults to None.
+                boxes to be ignored. Defaults to None.
+            prev_bev (torch.Tensor, optional): BEV features of previous frame.
         Returns:
-            dict: Losses of different branches.
+            torch.Tensor: Losses of each branch.
         """
+        outs = self.pts_bbox_head(predictions['img_feats'], predictions['img_metas'], predictions['prev_bev'], 
+                                  ego_his_trajs=ego_his_trajs, ego_lcf_feat=ego_lcf_feat)
+        
+        loss_inputs = [
+            targets['box3d'], gt_labels_3d, map_gt_bboxes_3d, map_gt_labels_3d,
+            outs, ego_fut_trajs, ego_fut_masks, ego_fut_cmd, gt_attr_labels
+        ]
 
-        logging.info(f"=== img shape: {img.shape}")
-        len_queue = img.size(0)
-        # prev_img = img[:, :-1, ...]
-        prev_img = img
-        # img = img[:, -1, ...]
+        losses = self.pts_bbox_head.loss(*loss_inputs, img_metas=features['img_metas'])
 
-        logging.info(f"=== after img shape: {img.shape}")
-
-        prev_img_metas = copy.deepcopy(img_metas)
-        # prev_bev = self.obtain_history_bev(prev_img, prev_img_metas)
-        # import pdb;pdb.set_trace()
-
-        prev_bev = self.obtain_history_bev(prev_img, prev_img_metas) if len_queue > 1 else None
-
-        # img_metas = [each[len_queue-1] for each in img_metas]
-
-        img_feats = self.extract_feat(img=img, img_metas=img_metas)
-
-        logging.info(f"=== vad img features: {img_feats}")
-
-        self.losses_pts = self.forward_pts_train(img_feats, gt_bboxes_3d, gt_labels_3d,
-                                            map_gt_bboxes_3d, map_gt_labels_3d, img_metas,
-                                            gt_bboxes_ignore, map_gt_bboxes_ignore, prev_bev,
-                                            ego_his_trajs=ego_his_trajs, ego_fut_trajs=ego_fut_trajs,
-                                            ego_fut_masks=ego_fut_masks, ego_fut_cmd=ego_fut_cmd,
-                                            ego_lcf_feat=ego_lcf_feat, gt_attr_labels=gt_attr_labels)
-        output: Dict[str, torch.Tensor] = {"img_feats": img_feats}
-        output.update(self.losses_pts)
-        return output
-
-    def vad_loss(self):
-        # TODO redefine loss function
-        return self.losses_pts
+        return losses
 
     def forward_test(
         self,

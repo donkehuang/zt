@@ -124,6 +124,13 @@ class EgoStatus:
     driving_command: npt.NDArray[np.int]
     in_global_frame: bool = False  # False for AgentInput
 
+@dataclass
+class CustomMetaData:
+
+    can_bus: npt.NDArray[np.float64]
+    lidar2img: npt.NDArray[np.float32]
+    in_global_frame: bool = False  # False for AgentInput
+
 
 @dataclass
 class AgentInput:
@@ -131,6 +138,7 @@ class AgentInput:
     ego_statuses: List[EgoStatus]
     cameras: List[Cameras]
     lidars: List[Lidar]
+    custom_meta_datas: List[CustomMetaData]
 
     @classmethod
     def from_scene_dict_list(
@@ -157,8 +165,9 @@ class AgentInput:
         )
 
         ego_statuses: List[EgoStatus] = []
-        cameras: List[EgoStatus] = []
+        cameras: List[Cameras] = []
         lidars: List[Lidar] = []
+        custom_meta_datas: List[CustomMetaData] = [] 
 
         for frame_idx in range(num_history_frames):
 
@@ -170,6 +179,15 @@ class AgentInput:
                 driving_command=scene_dict_list[frame_idx]["driving_command"],
             )
             ego_statuses.append(ego_status)
+
+            can_bus_state = scene_dict_list[frame_idx]["can_bus"]
+            img_state = scene_dict_list[frame_idx]['cams']['CAM_F0']["sensor2lidar_translation"]
+
+            custom_meta_data = CustomMetaData(
+                can_bus=np.array(can_bus_state, dtype=np.float32),
+                lidar2img=np.array(img_state, dtype=np.float32)
+            )
+            custom_meta_datas.append(custom_meta_data)
 
             sensor_names = sensor_config.get_sensors_at_iteration(frame_idx)
             cameras.append(
@@ -188,7 +206,7 @@ class AgentInput:
                 )
             )
 
-        return AgentInput(ego_statuses, cameras, lidars)
+        return AgentInput(ego_statuses, cameras, lidars, custom_meta_datas)
 
 
 @dataclass
@@ -249,6 +267,7 @@ class Frame:
     ego_status: EgoStatus
     lidar: Lidar
     cameras: Cameras
+    custom_meta: CustomMetaData
 
 
 @dataclass
@@ -310,7 +329,8 @@ class Scene:
         ego_statuses: List[EgoStatus] = []
         cameras: List[Cameras] = []
         lidars: List[Lidar] = []
-
+        custom_meta_datas: List[CustomMetaData] = []
+ 
         for frame_idx in range(self.scene_metadata.num_history_frames):
             frame_ego_status = self.frames[frame_idx].ego_status
 
@@ -324,8 +344,9 @@ class Scene:
             )
             cameras.append(self.frames[frame_idx].cameras)
             lidars.append(self.frames[frame_idx].lidar)
+            custom_meta_datas.append(self.frames[frame_idx].custom_meta)
 
-        return AgentInput(ego_statuses, cameras, lidars)
+        return AgentInput(ego_statuses, cameras, lidars, custom_meta_datas)
 
     @classmethod
     def _build_map_api(cls, map_name: str) -> AbstractMap:
@@ -401,6 +422,13 @@ class Scene:
                 sensor_names=sensor_names,
             )
 
+            can_bus_state = scene_dict_list[frame_idx]["can_bus"]
+            img_state = scene_dict_list[frame_idx]['cams']['CAM_F0']["sensor2lidar_translation"]
+            custom_meta_data = CustomMetaData(
+                can_bus=np.array(can_bus_state, dtype=np.float32),
+                lidar2img=np.array(img_state, dtype=np.float32)
+            )
+
             # lidar = Lidar.from_paths(
             #     sensor_blobs_path=sensor_blobs_path,
             #     lidar_path=Path(scene_dict_list[frame_idx]["lidar_path"]),
@@ -417,6 +445,7 @@ class Scene:
                 ego_status=global_ego_status,
                 lidar=lidar,
                 cameras=cameras,
+                custom_meta=custom_meta_data                
             )
             frames.append(frame)
 

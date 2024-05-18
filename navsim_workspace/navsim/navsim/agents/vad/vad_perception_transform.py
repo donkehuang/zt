@@ -223,13 +223,19 @@ class VADPerceptionTransformer(BaseModule):
         bev_queries = bev_queries.unsqueeze(1).repeat(1, bs, 1)
         bev_pos = bev_pos.flatten(2).permute(2, 0, 1)
 
+        img_metas_on_cpu = kwargs['img_metas']['camera_translation'].cpu()
+
         # obtain rotation angle and shift with ego motion
-        delta_x = np.array([each['can_bus'][0]
-                           for each in kwargs['img_metas']])
-        delta_y = np.array([each['can_bus'][1]
-                           for each in kwargs['img_metas']])
-        ego_angle = np.array(
-            [each['can_bus'][-2] / np.pi * 180 for each in kwargs['img_metas']])
+        # delta_x = np.array([each['can_bus'][0]
+        #                    for each in kwargs['img_metas']])
+        # delta_y = np.array([each['can_bus'][1]
+        #                    for each in kwargs['img_metas']])
+        # ego_angle = np.array(
+        #     [each['can_bus'][-2] / np.pi * 180 for each in kwargs['img_metas']])
+
+        delta_x = np.array([img_metas_on_cpu[0,0]])
+        delta_y = np.array([img_metas_on_cpu[0,1]])
+        ego_angle = 0
         grid_length_y = grid_length[0]
         grid_length_x = grid_length[1]
         translation_length = np.sqrt(delta_x ** 2 + delta_y ** 2)
@@ -241,6 +247,7 @@ class VADPerceptionTransformer(BaseModule):
             np.sin(bev_angle / 180 * np.pi) / grid_length_x / bev_w
         shift_y = shift_y * self.use_shift
         shift_x = shift_x * self.use_shift
+        shift = bev_queries.new_tensor([shift_x, shift_y])
         shift = bev_queries.new_tensor(
             [shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
 
@@ -260,10 +267,11 @@ class VADPerceptionTransformer(BaseModule):
                     prev_bev[:, i] = tmp_prev_bev[:, 0]
 
         # add can bus signals
-        can_bus = bev_queries.new_tensor(
-            [each['can_bus'] for each in kwargs['img_metas']])  # [:, :]
-        can_bus = self.can_bus_mlp(can_bus)[None, :, :]
-        bev_queries = bev_queries + can_bus * self.use_can_bus
+        # can_bus = bev_queries.new_tensor(
+        #     [each['can_bus'] for each in kwargs['img_metas']])  # [:, :]
+        # can_bus = self.can_bus_mlp(can_bus)[None, :, :]
+        bev_queries = bev_queries
+        # bev_queries = bev_queries + can_bus * self.use_can_bus
 
         feat_flatten = []
         spatial_shapes = []

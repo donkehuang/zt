@@ -37,12 +37,11 @@ class VADFeatureBuilder(AbstractFeatureBuilder):
         """Inherited, see superclass."""
         return "transfuser_feature"
 
-    def compute_features(self, agent_input: AgentInput) -> Dict[str, torch.Tensor]:
+    def compute_features(self, agent_input: AgentInput) -> Dict[str, torch.Tensor]: 
         """Inherited, see superclass."""
         features = {}
 
         features["camera_feature"] = self._get_camera_feature(agent_input)
-        # features["lidar_feature"] = self._get_lidar_feature(agent_input)
         features["status_feature"] = torch.concatenate(
             [
                 torch.tensor(agent_input.ego_statuses[-1].driving_command, dtype=torch.float32),
@@ -50,10 +49,54 @@ class VADFeatureBuilder(AbstractFeatureBuilder):
                 torch.tensor(agent_input.ego_statuses[-1].ego_acceleration, dtype=torch.float32),
             ],
         )
+        features["can_bus"] = torch.tensor(agent_input.custom_meta_datas[-1].can_bus, dtype=torch.float32)
+        
+        features["lidar2img"] = torch.tensor(agent_input.custom_meta_datas[-1].lidar2img, dtype=torch.float32)
+
+        features["camera_translation"] = torch.tensor(agent_input.cameras[-1].cam_f0.sensor2lidar_translation, dtype=torch.float32) 
+        features["camera_rotation"] = torch.tensor(agent_input.cameras[-1].cam_f0.sensor2lidar_rotation, dtype=torch.float32) 
+
+        rand_scale = 0.4
+        x_size = 256 * rand_scale
+        y_size = 2048 * rand_scale
+        scale_factor = np.eye(4)
+        scale_factor[0, 0] *= x_size
+        scale_factor[1, 1] *= y_size
+
+        translation_matrix = agent_input.cameras[-1].cam_f0.sensor2lidar_translation
+        if translation_matrix.shape != (1, 3):  
+            translation_matrix = translation_matrix.reshape(1, -1)  
+        rotation_matrix = agent_input.cameras[-1].cam_f0.sensor2lidar_rotation
+        transform_matrix = np.zeros((4, 4), dtype=np.float32)  
+        transform_matrix[:3, :3] = rotation_matrix
+        transform_matrix[:3, 3] = translation_matrix 
+        transform_matrix[3, 3] = 1.0  
+
+        transform_matrix = np.dot(scale_factor,transform_matrix)
+
+        features["transform_matrix"] = torch.tensor(transform_matrix, dtype=torch.float32) 
 
         logger.info(f"=== features:{features}")
 
         return features
+    
+    def _get_ego_state(self, scene: Scene) -> Dict[str, torch.Tensor]:
+        """
+        Extract stitched ego state from Scene
+        :param scene: input dataclass
+        :return: stitched ego state as torch tensor
+        """
+        trajectory = torch.tensor(
+            scene.get_future_trajectory(
+                num_trajectory_frames=self._config.trajectory_sampling.num_poses
+            ).poses
+        )
+        frame_idx = scene.scene_metadata.num_history_frames - 1
+        ego_pose = StateSE2(*scene.frames[frame_idx].ego_status.ego_pose)
+        
+        ego_feature =  transforms.ToTensor(ego_pose)
+        
+        return ego_feature
 
     def _get_camera_feature(self, agent_input: AgentInput) -> torch.Tensor:
         """
