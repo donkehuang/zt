@@ -170,46 +170,6 @@ class VADModel(MVXTwoStageDetector):
 
         return img_feats
 
-    def forward_pts_train(self,
-                          pts_feats,
-                          gt_bboxes_3d,
-                          gt_labels_3d,
-                          map_gt_bboxes_3d,
-                          map_gt_labels_3d,
-                          img_metas,
-                          gt_bboxes_ignore=None,
-                          map_gt_bboxes_ignore=None,
-                          prev_bev=None,
-                          ego_his_trajs=None,
-                          ego_fut_trajs=None,
-                          ego_fut_masks=None,
-                          ego_fut_cmd=None,
-                          ego_lcf_feat=None,
-                          gt_attr_labels=None):
-        """Forward function'
-        Args:
-            pts_feats (list[torch.Tensor]): Features of point cloud branch
-            gt_bboxes_3d (list[:obj:`BaseInstance3DBoxes`]): Ground truth
-                boxes for each sample.
-            gt_labels_3d (list[torch.Tensor]): Ground truth labels for
-                boxes of each sampole
-            img_metas (list[dict]): Meta information of samples.
-            gt_bboxes_ignore (list[torch.Tensor], optional): Ground truth
-                boxes to be ignored. Defaults to None.
-            prev_bev (torch.Tensor, optional): BEV features of previous frame.
-        Returns:
-            dict: Losses of each branch.
-        """
-
-        outs = self.pts_bbox_head(pts_feats, img_metas, prev_bev,
-                                  ego_his_trajs=ego_his_trajs, ego_lcf_feat=ego_lcf_feat)
-        loss_inputs = [
-            gt_bboxes_3d, gt_labels_3d, map_gt_bboxes_3d, map_gt_labels_3d,
-            outs, ego_fut_trajs, ego_fut_masks, ego_fut_cmd, gt_attr_labels
-        ]
-        losses = self.pts_bbox_head.loss(*loss_inputs, img_metas=img_metas)
-        return losses
-
     def forward_dummy(self, img):
         dummy_metas = None
         return self.forward_test(img=img, img_metas=[[dummy_metas]])
@@ -261,7 +221,6 @@ class VADModel(MVXTwoStageDetector):
         """
         outs = self.pts_bbox_head(predictions['img_feats'], predictions['img_metas'], predictions['prev_bev'], 
                                   ego_his_trajs=ego_his_trajs, ego_lcf_feat=ego_lcf_feat)
-        
         loss_inputs = [
             targets['box3d'], gt_labels_3d, map_gt_bboxes_3d, map_gt_labels_3d,
             outs, ego_fut_trajs, ego_fut_masks, ego_fut_cmd, gt_attr_labels
