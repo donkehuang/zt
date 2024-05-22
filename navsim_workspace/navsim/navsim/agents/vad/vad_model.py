@@ -202,7 +202,7 @@ class VADModel(MVXTwoStageDetector):
         self,
         features: Dict[str, torch.Tensor],
         targets: Dict[str, torch.Tensor],
-        predictions: Dict[str, torch.Tensor],        
+        prediction: Dict[str, torch.Tensor],        
     ) -> torch.Tensor:
         
         """Forward function'
@@ -219,14 +219,19 @@ class VADModel(MVXTwoStageDetector):
         Returns:
             torch.Tensor: Losses of each branch.
         """
-        outs = self.pts_bbox_head(predictions['img_feats'], predictions['img_metas'], predictions['prev_bev'], 
-                                  ego_his_trajs=ego_his_trajs, ego_lcf_feat=ego_lcf_feat)
+        outs = self.pts_bbox_head(prediction['img_feats'], prediction['img_metas'], prediction['prev_bev'], 
+                                  ego_his_trajs=targets['history_trajectory'], ego_lcf_feat=None)
+        # loss_inputs = [
+        #     targets['box3d'], gt_labels_3d, map_gt_bboxes_3d, map_gt_labels_3d,
+        #     outs, targets['trajectory'], ego_fut_masks, ego_fut_cmd, targets['agent_labels']
+        # ]
+
         loss_inputs = [
-            targets['box3d'], gt_labels_3d, map_gt_bboxes_3d, map_gt_labels_3d,
-            outs, ego_fut_trajs, ego_fut_masks, ego_fut_cmd, gt_attr_labels
+            None, None, None, None,
+            outs, targets['trajectory'], None, None, targets['agent_labels']
         ]
 
-        losses = self.pts_bbox_head.loss(*loss_inputs, img_metas=features['img_metas'])
+        losses = self.pts_bbox_head.loss(*loss_inputs, img_metas=prediction['img_metas'])
 
         return losses
 

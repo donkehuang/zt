@@ -81,7 +81,8 @@ class BEVFormerEncoder(TransformerLayerSequence):
     def point_sampling(self, reference_points, pc_range,  img_metas):
 
         lidar2img = []
-        lidar2img.append(img_metas['transform_matrix'].numpy())
+        transform_matrix =img_metas['transform_matrix'].cpu().numpy()
+        lidar2img.append(transform_matrix)
         # for img_meta in img_metas:
         #     lidar2img.append(img_meta['lidar2img'])
         lidar2img = np.asarray(lidar2img)

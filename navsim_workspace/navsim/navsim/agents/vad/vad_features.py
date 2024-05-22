@@ -186,6 +186,12 @@ class VADTargetBuilder(AbstractTargetBuilder):
                 num_trajectory_frames=self._config.trajectory_sampling.num_poses
             ).poses
         )
+
+        history_trajectory = torch.tensor(
+            scene.get_history_trajectory(
+                num_trajectory_frames=self._config.trajectory_sampling.num_poses
+            ).poses
+        )
         frame_idx = scene.scene_metadata.num_history_frames - 1
         annotations = scene.frames[frame_idx].annotations
         ego_pose = StateSE2(*scene.frames[frame_idx].ego_status.ego_pose)
@@ -195,6 +201,7 @@ class VADTargetBuilder(AbstractTargetBuilder):
 
         return {
             "trajectory": trajectory,
+            "history_trajectory": history_trajectory,
             "agent_states": agent_states,
             "agent_labels": agent_labels,
             "bev_semantic_map": bev_semantic_map,
